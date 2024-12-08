@@ -1,6 +1,7 @@
 mod api;
 mod models;
 mod tui;
+mod viz;
 
 use anyhow::Result;
 use chrono::{Local, NaiveDate};
@@ -20,6 +21,7 @@ async fn main() -> Result<()> {
         "List EU stock marketcaps".to_string(),
         "Export US stock marketcaps to CSV".to_string(),
         "Export EU stock marketcaps to CSV".to_string(),
+        "Generate Market Heatmap".to_string(),
         "Exit".to_string(),
     ];
 
@@ -41,6 +43,7 @@ async fn main() -> Result<()> {
             "List EU stock marketcaps" => list_details_eu().await?,
             "Export US stock marketcaps to CSV" => export_details_us_csv().await?,
             "Export EU stock marketcaps to CSV" => export_details_eu_csv().await?,
+            "Generate Market Heatmap" => generate_market_heatmap().await?,
             "Exit" => println!("Exiting..."),
             _ => unreachable!(),
         },
@@ -505,5 +508,72 @@ async fn export_exchange_rates_csv(fmp_client: &api::FMPClient) -> Result<()> {
     }
 
     println!("📝 CSV file created: {}", filename);
+    Ok(())
+}
+
+async fn generate_market_heatmap() -> Result<()> {
+    println!("Generating market heatmap...");
+    let api_key = env::var("FIANANCIALMODELINGPREP_API_KEY").expect("FIANANCIALMODELINGPREP_API_KEY must be set");
+    let fmp_client = api::FMPClient::new(api_key);
+    
+    // Get EU tickers
+    let eu_tickers = vec![
+        "ASML.AS", "SAP.DE", "LVMH.PA", "NOVO-B.CO", "LIN.DE", "SAN.MC", "OR.PA", "SIE.DE",
+        "ALV.DE", "BAYN.DE", "AIR.PA", "DTE.DE", "BNP.PA", "CS.PA", "ISP.MI", "SU.PA",
+        "MC.PA", "ABI.BR", "AI.PA", "BAS.DE", "DPW.DE", "ENEL.MI", "IBE.MC", "KER.PA",
+        "RMS.PA", "SAN.PA", "TEF.MC", "VOW3.DE"
+    ];
+
+    // Get US tickers
+    let us_tickers = vec![
+        "AAPL", "MSFT", "GOOGL", "AMZN", "META", "BRK-B", "NVDA", "TSLA", "UNH", "XOM",
+        "JNJ", "JPM", "V", "PG", "MA", "HD", "CVX", "BAC", "ABBV", "PFE", "KO", "PEP",
+        "TMO", "MRK", "AVGO", "COST"
+    ];
+
+    println!("Fetching market data for {} companies...", eu_tickers.len() + us_tickers.len());
+    
+    let mut stocks = Vec::new();
+    let eur_to_usd = 1.10; // Approximate conversion rate, you might want to fetch this dynamically
+
+    // Process EU stocks
+    for ticker in eu_tickers {
+        if let Ok(details) = fmp_client.get_details(ticker).await {
+            if let Some(market_cap) = details.market_cap {
+                let market_cap_eur = if details.currency_name.unwrap_or_default() == "USD" {
+                    market_cap / eur_to_usd
+                } else {
+                    market_cap
+                };
+                stocks.push(viz::StockData {
+                    symbol: details.ticker,
+                    market_cap_eur,
+                });
+            }
+        }
+    }
+
+    // Process US stocks
+    for ticker in us_tickers {
+        if let Ok(details) = fmp_client.get_details(ticker).await {
+            if let Some(market_cap) = details.market_cap {
+                // Convert USD to EUR
+                let market_cap_eur = market_cap / eur_to_usd;
+                stocks.push(viz::StockData {
+                    symbol: details.ticker,
+                    market_cap_eur,
+                });
+            }
+        }
+    }
+
+    // Sort by market cap descending and take top 50
+    stocks.sort_by(|a, b| b.market_cap_eur.partial_cmp(&a.market_cap_eur).unwrap());
+    stocks.truncate(50);
+
+    let timestamp = Local::now().format("%Y%m%d_%H%M%S").to_string();
+    let output_path = format!("output/market_heatmap_{}.png", timestamp);
+    viz::create_market_heatmap(stocks, &output_path)?;
+    println!("Market heatmap generated at: {}", output_path);
     Ok(())
 }
