@@ -1,0 +1,52 @@
+eu_tickers = [
+    "ASML", "LVMH.PA", "NOVO-B.CO", "ROG.SW", "MC.PA", 
+    "SAP.DE", "BALN.SW", "SAN.PA", "AIR.PA", "OR.PA"
+]
+
+us_tickers = [
+    "NKE", "TJX", "VFC", "GPS", "PVH", "M", "RL", "JWN", "HBI", "UA",
+    "CRI", "FL", "COLM", "LULU", "URBN", "AEO", "DKS"
+]
+
+tickers = [
+     "MC.PA",     # LVMH (Paris)
+        "NKE",       # Nike (NYSE)
+        "ITX.MC",    # Inditex (Madrid)
+        "CDI.PA",    # Dior (Paris)
+        "KER.PA",    # Kering (Paris)
+        "RMS.PA",    # Hermès (Paris)
+        "TJX",       # TJX (NYSE)
+        "CFR.SW",    # Richemont (Swiss)
+        "ADS.DE",    # adidas (German)
+        "9983.T",    # Fast Retailing (Tokyo)
+        "EL.PA",     # EssilorLuxottica (Milan)
+        "ROST",      # Ross Stores (NASDAQ)
+        "VFC",       # VF Corp (NYSE)
+        "HM-B.ST",   # H&M (Stockholm)
+        "UHR.SW",    # Swatch Group (Swiss)
+        "TPR",       # Coach/Tapestry (NYSE) - COH is now TPR
+        "ZAL.DE",    # Zalando (German)
+        "GPS",       # Gap (NYSE)
+        "BBWI",      # L Brands is now Bath & Body Works (NYSE)
+        "BRBY.L",    # Burberry (London)
+        "1929.HK",   # Chow Tai Fook (Hong Kong)
+        "PVH",       # PVH (NYSE)
+        "LULU",      # Lululemon (NASDAQ)
+        "1913.HK",   # Prada Group (Hong Kong)
+        "VIPS",      # Vipshop Holdings (NYSE)
+        "NXT.L",     # Next (London)
+        "CPRI",      # Michael Kors is now Capri Holdings (NYSE)
+        "M",         # Macy's (NYSE)
+        "MONC.MI",   # Moncler (Milan)
+        "RL",        # Ralph Lauren (NYSE)
+        "JWN",       # Nordstrom (NYSE)
+        "ASC.L",     # ASOS (London)
+        "LREN3.SA",  # Lojas Renner (Brazil)
+        "HBI",       # Hanes (NYSE)
+        "UAA",       # Under Armour (NYSE)
+        "PUM.DE",    # PUMA (German)
+        "MKS.L",     # Marks & Spencer (London)
+        "SKX",       # Skechers (NYSE)
+        "BOSS.DE",   # Hugo Boss (German)
+        "GIL.TO",    # Gildan (Toronto)
+]

@@ -2,6 +2,7 @@ mod api;
 mod models;
 mod tui;
 mod viz;
+mod config;
 
 use anyhow::Result;
 use chrono::{Local, NaiveDate};
@@ -15,9 +16,9 @@ async fn main() -> Result<()> {
     dotenv().ok();
 
     let options = vec![
-        "Export EU + US stock marketcaps to CSV".to_string(),
+        "Export combined EU + US stock marketcaps to CSV".to_string(),
         "Export currency exchange rates to CSV".to_string(),
-        "List US stock marketcaps".to_string(),
+        "List US stock marketcaps (Polygon API)".to_string(),
         "List EU stock marketcaps".to_string(),
         "Export US stock marketcaps to CSV".to_string(),
         "Export EU stock marketcaps to CSV".to_string(),
@@ -29,7 +30,7 @@ async fn main() -> Result<()> {
 
     match selected {
         Some(ans) => match ans.as_str() {
-            "Export EU + US stock marketcaps to CSV" => {
+            "Export combined EU + US stock marketcaps to CSV" => {
                 let api_key = env::var("FIANANCIALMODELINGPREP_API_KEY").expect("FIANANCIALMODELINGPREP_API_KEY must be set");
                 let fmp_client = api::FMPClient::new(api_key);
                 export_details_combined_csv(&fmp_client).await?;
@@ -39,7 +40,7 @@ async fn main() -> Result<()> {
                 let fmp_client = api::FMPClient::new(api_key);
                 export_exchange_rates_csv(&fmp_client).await?;
             }
-            "List US stock marketcaps" => list_details_us().await?,
+            "List US stock marketcaps (Polygon API)" => list_details_us().await?,
             "List EU stock marketcaps" => list_details_eu().await?,
             "Export US stock marketcaps to CSV" => export_details_us_csv().await?,
             "Export EU stock marketcaps to CSV" => export_details_eu_csv().await?,
@@ -54,10 +55,8 @@ async fn main() -> Result<()> {
 }
 
 async fn export_details_eu_csv() -> Result<()> {
-    let tickers = vec![
-        "ASML", "LVMH.PA", "NOVO-B.CO", "ROG.SW", "MC.PA", 
-        "SAP.DE", "BALN.SW", "SAN.PA", "AIR.PA", "OR.PA"
-    ];
+    let config = config::load_config()?;
+    let tickers = config.eu_tickers;
 
     // Create output directory if it doesn't exist
     let output_dir = PathBuf::from("output");
@@ -124,14 +123,11 @@ async fn export_details_eu_csv() -> Result<()> {
 }
 
 async fn export_details_us_csv() -> Result<()> {
+    let config = config::load_config()?;
+    let tickers = config.us_tickers;
     let api_key = env::var("POLYGON_API_KEY").expect("POLYGON_API_KEY must be set");
     let client = api::PolygonClient::new(api_key);
     let date = NaiveDate::from_ymd_opt(2023, 11, 1).unwrap();
-
-    let tickers = vec![
-        "NKE", "TJX", "VFC", "GPS", "PVH", "M", "RL", "JWN", "HBI", "UA",
-        "CRI", "FL", "COLM", "LULU", "URBN", "AEO", "DKS",
-    ];
 
     // Create output directory if it doesn't exist
     let output_dir = PathBuf::from("output");
@@ -192,14 +188,11 @@ async fn export_details_us_csv() -> Result<()> {
 }
 
 async fn list_details_us() -> Result<()> {
+    let config = config::load_config()?;
+    let tickers = config.us_tickers;
     let api_key = env::var("POLYGON_API_KEY").expect("POLYGON_API_KEY must be set");
     let client = api::PolygonClient::new(api_key);
     let date = NaiveDate::from_ymd_opt(2023, 11, 1).unwrap();
-
-    let tickers = vec![
-        "NKE", "TJX", "VFC", "GPS", "PVH", "M", "RL", "JWN", "HBI", "UA",
-        "CRI", "FL", "COLM", "LULU", "URBN", "AEO", "DKS",
-    ];
 
     for (i, ticker) in tickers.iter().enumerate() {
         println!("\nFetching the marketcap for {} ({}/{}) ⌛️", ticker, i + 1, tickers.len());
@@ -220,10 +213,8 @@ async fn list_details_us() -> Result<()> {
 }
 
 async fn list_details_eu() -> Result<()> {
-    let tickers = vec![
-        "ASML", "LVMH.PA", "NOVO-B.CO", "ROG.SW", "MC.PA", 
-        "SAP.DE", "BALN.SW", "SAN.PA", "AIR.PA", "OR.PA"
-    ];
+    let config = config::load_config()?;
+    let tickers = config.eu_tickers;
 
     for (i, ticker) in tickers.iter().enumerate() {
         println!("\nFetching the marketcap for {} ({}/{}) ⌛️", ticker, i + 1, tickers.len());
@@ -244,6 +235,9 @@ async fn list_details_eu() -> Result<()> {
 }
 
 async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> {
+    let config = config::load_config()?;
+    let tickers = config.tickers;
+    
     // First fetch exchange rates
     println!("Fetching current exchange rates...");
     let exchange_rates = match fmp_client.get_exchange_rates().await {
@@ -317,49 +311,6 @@ async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> 
     };
 
     // Convert exchange prefixes to FMP format
-    let tickers = vec![
-        "MC.PA",     // LVMH (Paris)
-        "NKE",       // Nike (NYSE)
-        "ITX.MC",    // Inditex (Madrid)
-        "CDI.PA",    // Dior (Paris)
-        "KER.PA",    // Kering (Paris)
-        "RMS.PA",    // Hermès (Paris)
-        "TJX",       // TJX (NYSE)
-        "CFR.SW",    // Richemont (Swiss)
-        "ADS.DE",    // adidas (German)
-        "9983.T",    // Fast Retailing (Tokyo)
-        "EL.PA",     // EssilorLuxottica (Milan)
-        "ROST",      // Ross Stores (NASDAQ)
-        "VFC",       // VF Corp (NYSE)
-        "HM-B.ST",   // H&M (Stockholm)
-        "UHR.SW",    // Swatch Group (Swiss)
-        "TPR",       // Coach/Tapestry (NYSE) - COH is now TPR
-        "ZAL.DE",    // Zalando (German)
-        "GPS",       // Gap (NYSE)
-        "BBWI",      // L Brands is now Bath & Body Works (NYSE)
-        "BRBY.L",    // Burberry (London)
-        "1929.HK",   // Chow Tai Fook (Hong Kong)
-        "PVH",       // PVH (NYSE)
-        "LULU",      // Lululemon (NASDAQ)
-        "1913.HK",   // Prada Group (Hong Kong)
-        "VIPS",      // Vipshop Holdings (NYSE)
-        "NXT.L",     // Next (London)
-        "CPRI",      // Michael Kors is now Capri Holdings (NYSE)
-        "M",         // Macy's (NYSE)
-        "MONC.MI",   // Moncler (Milan)
-        "RL",        // Ralph Lauren (NYSE)
-        "JWN",       // Nordstrom (NYSE)
-        "ASC.L",     // ASOS (London)
-        "LREN3.SA",  // Lojas Renner (Brazil)
-        "HBI",       // Hanes (NYSE)
-        "UAA",       // Under Armour (NYSE)
-        "PUM.DE",    // PUMA (German)
-        "MKS.L",     // Marks & Spencer (London)
-        "SKX",       // Skechers (NYSE)
-        "BOSS.DE",   // Hugo Boss (German)
-        "GIL.TO",    // Gildan (Toronto)
-    ];
-    
     let timestamp = Local::now().format("%Y%m%d_%H%M%S");
     let filename = format!("output/combined_marketcaps_{}.csv", timestamp);
     let file = std::fs::File::create(&filename)?;
@@ -384,7 +335,7 @@ async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> 
     let mut results = Vec::new();
     for ticker in tickers {
         println!("Fetching data for {}", ticker);
-        match fmp_client.get_details(ticker).await {
+        match fmp_client.get_details(&ticker).await {
             Ok(details) => {
                 let original_market_cap = details.market_cap.unwrap_or(0.0);
                 let currency = details.currency_symbol.clone().unwrap_or_default();
@@ -512,24 +463,13 @@ async fn export_exchange_rates_csv(fmp_client: &api::FMPClient) -> Result<()> {
 }
 
 async fn generate_market_heatmap() -> Result<()> {
-    println!("Generating market heatmap...");
     let api_key = env::var("FIANANCIALMODELINGPREP_API_KEY").expect("FIANANCIALMODELINGPREP_API_KEY must be set");
     let fmp_client = api::FMPClient::new(api_key);
     
-    // Get EU tickers
-    let eu_tickers = vec![
-        "ASML.AS", "SAP.DE", "LVMH.PA", "NOVO-B.CO", "LIN.DE", "SAN.MC", "OR.PA", "SIE.DE",
-        "ALV.DE", "BAYN.DE", "AIR.PA", "DTE.DE", "BNP.PA", "CS.PA", "ISP.MI", "SU.PA",
-        "MC.PA", "ABI.BR", "AI.PA", "BAS.DE", "DPW.DE", "ENEL.MI", "IBE.MC", "KER.PA",
-        "RMS.PA", "SAN.PA", "TEF.MC", "VOW3.DE"
-    ];
-
-    // Get US tickers
-    let us_tickers = vec![
-        "AAPL", "MSFT", "GOOGL", "AMZN", "META", "BRK-B", "NVDA", "TSLA", "UNH", "XOM",
-        "JNJ", "JPM", "V", "PG", "MA", "HD", "CVX", "BAC", "ABBV", "PFE", "KO", "PEP",
-        "TMO", "MRK", "AVGO", "COST"
-    ];
+    // Load tickers from config
+    let config = config::load_config()?;
+    let eu_tickers = config.eu_tickers;
+    let us_tickers = config.us_tickers;
 
     println!("Fetching market data for {} companies...", eu_tickers.len() + us_tickers.len());
     
@@ -537,7 +477,7 @@ async fn generate_market_heatmap() -> Result<()> {
     let eur_to_usd = 1.10; // Approximate conversion rate, you might want to fetch this dynamically
 
     // Process EU stocks
-    for ticker in eu_tickers {
+    for ticker in eu_tickers.iter() {
         if let Ok(details) = fmp_client.get_details(ticker).await {
             if let Some(market_cap) = details.market_cap {
                 let market_cap_eur = if details.currency_name.unwrap_or_default() == "USD" {
@@ -554,7 +494,7 @@ async fn generate_market_heatmap() -> Result<()> {
     }
 
     // Process US stocks
-    for ticker in us_tickers {
+    for ticker in us_tickers.iter() {
         if let Ok(details) = fmp_client.get_details(ticker).await {
             if let Some(market_cap) = details.market_cap {
                 // Convert USD to EUR
