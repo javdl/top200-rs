@@ -53,91 +53,120 @@ eu_tickers = [
 ]
 
 us_tickers = [
+    "NKE", # Nike
     "TJX", # TJX
-    "ROST", # Ross Stores
     "VFC", # VF
     "COH", # Coach
-    "GPS", # Gap
-    "LB", # L Brands
-    "TIF", # Tiffany & Co.
-    "PVH", # PVH HQ
     "LULU", # Lululemon
-    "VIPS", # Vipshop Holdings
     "KORS", # Michael Kors
     "M", # Macy's
     "RL", # Ralph Lauren
     "JWN", # Nordstrom
-    "HBI", # Hanes
-    "UA" # Under Armour
+    "PUM.DE", # PUMA
     "SKX", # Skechers
     "CRI", # Carter's
     "COLM", # Columbia Sportswear
     "FL", # Foot locker
-    "URBN", # Urban Outfitters
-    "AEO", # American Eagle Outfitters
-    "DKS", # Dick's Sporting Goods
-    "DECK" # Deckers Outdoor
-    "WWW" # Wolverine
-    "SHOO" # Steve Madden
-    "PLCE" # Children's Place
-    "DDS" # Dillard's
-    "GIII" # G-III Apparel Group
-    "DSW" # DSW
-    "ANF" # Abercrombie & Fitch
-    "OXM" # Oxford Industries
-    "GES" # GUESS
-    "CAL" # Caleres
-    "CHS" # Chico's
-    "JCP" # J.C. Penney
-    "BKE" # Buckle
-    "GCO" # Genesco
-    "FOSL" # Fossil
-    "EXPR" # Express
-    "ASNA" # Ascena Retail Group
-    "VRA" # Vera Bradley
-    "CATO" # Cato Fashion
-    "FRAN" # Francesca's
+    "DECK", # Deckers Outdoor
+    "WWW", # Wolverine
+    "BOO.L", # Boohoo.Com
+    "SPD.L", # Sports Direct
 ]
 
 tickers = [
-     "MC.PA",     # LVMH (Paris)
-        "NKE",       # Nike (NYSE)
-        "ITX.MC",    # Inditex (Madrid)
-        "CDI.PA",    # Dior (Paris)
-        "KER.PA",    # Kering (Paris)
-        "RMS.PA",    # Hermès (Paris)
-        "TJX",       # TJX (NYSE)
-        "CFR.SW",    # Richemont (Swiss)
-        "ADS.DE",    # adidas (German)
-        "9983.T",    # Fast Retailing (Tokyo)
-        "EL.PA",     # EssilorLuxottica (Milan)
-        "ROST",      # Ross Stores (NASDAQ)
-        "VFC",       # VF Corp (NYSE)
-        "HM-B.ST",   # H&M (Stockholm)
-        "UHR.SW",    # Swatch Group (Swiss)
-        "TPR",       # Coach/Tapestry (NYSE) - COH is now TPR
-        "ZAL.DE",    # Zalando (German)
-        "GPS",       # Gap (NYSE)
-        "BBWI",      # L Brands is now Bath & Body Works (NYSE)
-        "BRBY.L",    # Burberry (London)
-        "1929.HK",   # Chow Tai Fook (Hong Kong)
-        "PVH",       # PVH (NYSE)
-        "LULU",      # Lululemon (NASDAQ)
-        "1913.HK",   # Prada Group (Hong Kong)
-        "VIPS",      # Vipshop Holdings (NYSE)
-        "NXT.L",     # Next (London)
-        "CPRI",      # Michael Kors is now Capri Holdings (NYSE)
-        "M",         # Macy's (NYSE)
-        "MONC.MI",   # Moncler (Milan)
-        "RL",        # Ralph Lauren (NYSE)
-        "JWN",       # Nordstrom (NYSE)
-        "ASC.L",     # ASOS (London)
-        "LREN3.SA",  # Lojas Renner (Brazil)
-        "HBI",       # Hanes (NYSE)
-        "UAA",       # Under Armour (NYSE)
-        "PUM.DE",    # PUMA (German)
-        "MKS.L",     # Marks & Spencer (London)
-        "SKX",       # Skechers (NYSE)
-        "BOSS.DE",   # Hugo Boss (German)
-        "GIL.TO",    # Gildan (Toronto)
+    "MC.PA", # LVMH
+    "NKE", # Nike
+    "ITX.MC", # Inditex
+    "CDI.PA", # Dior
+    "KER.PA", # Kering
+    "RMS.PA", # Hermès
+    "TJX", # TJX
+    "CFR.SW", # Richemont
+    "ADS.DE", # adidas
+    "9983.T", # Fast Retailing
+    "LUX.MI", # Luxottica
+    "ROST", # Ross Stores
+    "VFC", # VF
+    "HM-B.ST", # H&M
+    "UHR.SW", # Swatch Group
+    "COH", # Coach
+    "ZAL.DE", # Zalando
+    "GPS", # Gap
+    "LB", # L Brands
+    "TIF", # Tiffany & Co.
+    "1929.HK", # Chow Tai Fook
+    "PVH", # PVH HQ
+    "LULU", # Lululemon
+    "1913.HK", # Prada Group
+    "VIPS", # Vipshop Holdings
+    "BRBY.L", # Burberry
+    "NXT.L", # Next
+    "KORS", # Michael Kors
+    "M", # Macy's
+    "MONC.MI", # Moncler
+    "RL", # Ralph Lauren
+    "JWN", # Nordstrom
+    "ASC.L", # ASOS
+    "LREN3.SA", # Lojas Renner
+    "HBI", # Hanes
+    "UA", # Under Armour
+    "PUM.DE", # PUMA
+    "MKS.L", # Marks & Spencer (M&S)
+    "SKX", # Skechers
+    "BOSS.DE", # Hugo Boss
+    "GIL.TO", # Gildan
+    "CRI", # Carter's
+    "COLM", # Columbia Sportswear
+    "JD.L", # JD Sports
+    "FL", # Foot locker
+    "SFER.MI", # Salvatore Ferragamo
+    "YNAP.MI", # YOOX Net-a-Porter Group
+    "002563.SZ", # Semir
+    "URBN", # Urban Outfitters
+    "AEO", # American Eagle Outfitters
+    "DKS", # Dick's Sporting Goods
+    "7936.T", # Asics
+    "DECK", # Deckers Outdoor
+    "600612.SS", # Lao Feng Xiang Jewelry
+    "WWW", # Wolverine
+    "BOO.L", # Boohoo.Com
+    "SPD.L", # Sports Direct
+    "SHOO", # Steve Madden
+    "GRND3.SA", # Grendene
+    "TOD.MI", # TOD'S
+    "ALPA4.SA", # Alpargatas - Havaianas
+    "PLCE", # Children's Place
+    "DDS", # Dillard's
+    "BC.MI", # Brunello Cucinelli
+    "2331.HK", # Li Ning
+    "SGP.L", # Supergroup
+    "TED.L", # Ted Baker
+    "GIII", # G-III Apparel Group
+    "ABFRL.NS", # Pantaloons
+    "DSW", # DSW
+    "ARVIND.NS", # Arvind
+    "8016.T", # Onward Holdings
+    "ANF", # Abercrombie & Fitch
+    "OXM", # Oxford Industries
+    "HBC.TO", # Hudson's Bay
+    "GES", # GUESS
+    "7606.T", # United Arrows
+    "CAL", # Caleres
+    "CHS", # Chico's    "JCP", # J.C. Penney
+    "002269.SZ", # Metersbonwe
+    "HGTX3.SA", # Cia Hering
+    "BKE", # Buckle
+    "3998.HK", # Bosideng
+    "GEO.MI", # GEOX
+    "GCO", # Genesco
+    "0330.HK", # Esprit
+    "MUL.L", # Mulberry
+    "FOSL", # Fossil
+    "VAN.BR", # Van de Velde
+    "EXPR", # Express
+    "ASNA", # Ascena Retail Group
+    "GWI1.DE", # Gerry Weber
+    "VRA", # Vera Bradley
+    "CATO", # Cato Fashion
+    "FRAN" # Francesca's
 ]
