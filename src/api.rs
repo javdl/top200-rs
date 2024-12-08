@@ -189,7 +189,7 @@ impl PolygonClient {
 }
 
 pub async fn get_details_eu(ticker: &str) -> Result<Details> {
-    let api_key = env::var("FIANANCIALMODELINGPREP_API_KEY").expect("FIANANCIALMODELINGPREP_API_KEY must be set");
+    let api_key = env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set");
     let client = FMPClient::new(api_key);
     client.get_details(ticker).await
 }

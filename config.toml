@@ -1,11 +1,102 @@
 eu_tickers = [
-    "ASML", "LVMH.PA", "NOVO-B.CO", "ROG.SW", "MC.PA", 
-    "SAP.DE", "BALN.SW", "SAN.PA", "AIR.PA", "OR.PA"
+    "C.PA", # LVMH
+    "ITX.MC", # Inditex
+    "CDI.PA", # Dior
+    "KER.PA", # Kering
+    "RMS.PA", # Hermès
+    "CFR.SW", # Richemont
+    "ADS.DE", # adidas
+    "9983.T", # Fast Retailing
+    "LUX.MI", # Luxottica
+    "HM-B.ST", # H&M
+    "UHR.SW", # Swatch Group
+    "ZAL.DE", # Zalando
+    "1929.HK", # Chow Tai Fook
+    "1913.HK", # Prada Group
+    "BRBY.L", # Burberry
+    "NXT.L", # Next
+    "MONC.MI", # Moncler
+    "ASC.L", # ASOS
+    "LREN3.SA", # Lojas Renner
+    "PUM.DE", # PUMA
+    "MKS.L", # Marks & Spencer (M&S)
+    "BOSS.DE", # Hugo Boss
+    "GIL.TO", # Gildan
+    "JD.L", # JD Sports
+    "SFER.MI", # Salvatore Ferragamo
+    "YNAP.MI", # YOOX Net-a-Porter Group
+    "002563.SZ", # Semir
+    "7936.T", # Asics
+    "600612.SS", # Lao Feng Xiang Jewelry
+    "BOO.L", # Boohoo.Com
+    "SPD.L", # Sports Direct
+    "GRND3.SA", # Grendene
+    "TOD.MI", # TOD'S
+    "ALPA4.SA", # Alpargatas - Havaianas
+    "BC.MI", # Brunello Cucinelli
+    "2331.HK", # Li Ning
+    "SGP.L", # Supergroup
+    "TED.L", # Ted Baker
+    "ABFRL.NS", # Pantaloons
+    "ARVIND.NS", # Arvind
+    "8016.T", # Onward Holdings
+    "HBC.TO", # Hudson's Bay
+    "7606.T", # United Arrows
+    "002269.SZ", # Metersbonwe
+    "HGTX3.SA", # Cia Hering
+    "3998.HK", # Bosideng
+    "GEO.MI", # GEOX
+    "0330.HK", # Esprit
+    "MUL.L", # Mulberry
+    "VAN.BR", # Van de Velde
+    "GWI1.DE", # Gerry Weber
 ]
 
 us_tickers = [
-    "NKE", "TJX", "VFC", "GPS", "PVH", "M", "RL", "JWN", "HBI", "UA",
-    "CRI", "FL", "COLM", "LULU", "URBN", "AEO", "DKS"
+    "TJX", # TJX
+    "ROST", # Ross Stores
+    "VFC", # VF
+    "COH", # Coach
+    "GPS", # Gap
+    "LB", # L Brands
+    "TIF", # Tiffany & Co.
+    "PVH", # PVH HQ
+    "LULU", # Lululemon
+    "VIPS", # Vipshop Holdings
+    "KORS", # Michael Kors
+    "M", # Macy's
+    "RL", # Ralph Lauren
+    "JWN", # Nordstrom
+    "HBI", # Hanes
+    "UA" # Under Armour
+    "SKX", # Skechers
+    "CRI", # Carter's
+    "COLM", # Columbia Sportswear
+    "FL", # Foot locker
+    "URBN", # Urban Outfitters
+    "AEO", # American Eagle Outfitters
+    "DKS", # Dick's Sporting Goods
+    "DECK" # Deckers Outdoor
+    "WWW" # Wolverine
+    "SHOO" # Steve Madden
+    "PLCE" # Children's Place
+    "DDS" # Dillard's
+    "GIII" # G-III Apparel Group
+    "DSW" # DSW
+    "ANF" # Abercrombie & Fitch
+    "OXM" # Oxford Industries
+    "GES" # GUESS
+    "CAL" # Caleres
+    "CHS" # Chico's
+    "JCP" # J.C. Penney
+    "BKE" # Buckle
+    "GCO" # Genesco
+    "FOSL" # Fossil
+    "EXPR" # Express
+    "ASNA" # Ascena Retail Group
+    "VRA" # Vera Bradley
+    "CATO" # Cato Fashion
+    "FRAN" # Francesca's
 ]
 
 tickers = [

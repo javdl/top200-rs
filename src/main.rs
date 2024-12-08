@@ -31,12 +31,12 @@ async fn main() -> Result<()> {
     match selected {
         Some(ans) => match ans.as_str() {
             "Export combined EU + US stock marketcaps to CSV" => {
-                let api_key = env::var("FIANANCIALMODELINGPREP_API_KEY").expect("FIANANCIALMODELINGPREP_API_KEY must be set");
+                let api_key = env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set");
                 let fmp_client = api::FMPClient::new(api_key);
                 export_details_combined_csv(&fmp_client).await?;
             }
             "Export currency exchange rates to CSV" => {
-                let api_key = env::var("FIANANCIALMODELINGPREP_API_KEY").expect("FIANANCIALMODELINGPREP_API_KEY must be set");
+                let api_key = env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set");
                 let fmp_client = api::FMPClient::new(api_key);
                 export_exchange_rates_csv(&fmp_client).await?;
             }
@@ -463,7 +463,7 @@ async fn export_exchange_rates_csv(fmp_client: &api::FMPClient) -> Result<()> {
 }
 
 async fn generate_market_heatmap() -> Result<()> {
-    let api_key = env::var("FIANANCIALMODELINGPREP_API_KEY").expect("FIANANCIALMODELINGPREP_API_KEY must be set");
+    let api_key = env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set");
     let fmp_client = api::FMPClient::new(api_key);
     
     // Load tickers from config
