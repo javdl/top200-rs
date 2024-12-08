@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use chrono::NaiveDate;
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json;
 use std::{env, time::Duration};
 use tokio::time::sleep;

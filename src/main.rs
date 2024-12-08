@@ -1,11 +1,11 @@
 mod api;
 mod models;
+mod tui;
 
 use anyhow::Result;
 use chrono::{Local, NaiveDate};
 use csv::Writer;
 use dotenv::dotenv;
-use inquire::Select;
 use std::{env, path::PathBuf, time::Duration};
 use tokio;
 
@@ -14,33 +14,37 @@ async fn main() -> Result<()> {
     dotenv().ok();
 
     let options = vec![
-        "Export EU + US stock marketcaps to CSV",
-        "Export currency exchange rates to CSV",
-        "List US stock marketcaps",
-        "List EU stock marketcaps",
-        "Export US stock marketcaps to CSV",
-        "Export EU stock marketcaps to CSV",
-        "Exit",
+        "Export EU + US stock marketcaps to CSV".to_string(),
+        "Export currency exchange rates to CSV".to_string(),
+        "List US stock marketcaps".to_string(),
+        "List EU stock marketcaps".to_string(),
+        "Export US stock marketcaps to CSV".to_string(),
+        "Export EU stock marketcaps to CSV".to_string(),
+        "Exit".to_string(),
     ];
-    let ans = Select::new("What would you like to do?", options).prompt()?;
 
-    match ans {
-        "Export EU + US stock marketcaps to CSV" => {
-            let api_key = env::var("FIANANCIALMODELINGPREP_API_KEY").expect("FIANANCIALMODELINGPREP_API_KEY must be set");
-            let fmp_client = api::FMPClient::new(api_key);
-            export_details_combined_csv(&fmp_client).await?;
-        }
-        "Export currency exchange rates to CSV" => {
-            let api_key = env::var("FIANANCIALMODELINGPREP_API_KEY").expect("FIANANCIALMODELINGPREP_API_KEY must be set");
-            let fmp_client = api::FMPClient::new(api_key);
-            export_exchange_rates_csv(&fmp_client).await?;
-        }
-        "List US stock marketcaps" => list_details_us().await?,
-        "List EU stock marketcaps" => list_details_eu().await?,
-        "Export US stock marketcaps to CSV" => export_details_us_csv().await?,
-        "Export EU stock marketcaps to CSV" => export_details_eu_csv().await?,
-        "Exit" => println!("Exiting..."),
-        _ => unreachable!(),
+    let selected = tui::start_tui(options)?;
+
+    match selected {
+        Some(ans) => match ans.as_str() {
+            "Export EU + US stock marketcaps to CSV" => {
+                let api_key = env::var("FIANANCIALMODELINGPREP_API_KEY").expect("FIANANCIALMODELINGPREP_API_KEY must be set");
+                let fmp_client = api::FMPClient::new(api_key);
+                export_details_combined_csv(&fmp_client).await?;
+            }
+            "Export currency exchange rates to CSV" => {
+                let api_key = env::var("FIANANCIALMODELINGPREP_API_KEY").expect("FIANANCIALMODELINGPREP_API_KEY must be set");
+                let fmp_client = api::FMPClient::new(api_key);
+                export_exchange_rates_csv(&fmp_client).await?;
+            }
+            "List US stock marketcaps" => list_details_us().await?,
+            "List EU stock marketcaps" => list_details_eu().await?,
+            "Export US stock marketcaps to CSV" => export_details_us_csv().await?,
+            "Export EU stock marketcaps to CSV" => export_details_eu_csv().await?,
+            "Exit" => println!("Exiting..."),
+            _ => unreachable!(),
+        },
+        None => println!("Exiting..."),
     }
 
     Ok(())
