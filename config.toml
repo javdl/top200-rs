@@ -1,6 +1,7 @@
 non_us_tickers = [
     "MC.PA", # LVMH
     "ITX.MC", # Inditex
+    "IDEXY", # Inditex (ADR)
     "CDI.PA", # Dior
     "KER.PA", # Kering
     "RMS.PA", # Hermès
@@ -53,11 +54,23 @@ non_us_tickers = [
     "AEF.MI", # Aeffe
     "BORG.ST", # Björn Borg
     "GFG.DE", # Global Fashion Group
-    # "GRGD.TO", # Groupe Dynamite -> Garage -> WERKT NIET?
     "KER.PA", # Kering
     "SFL.MI", # Safilo Group
     "WOL.VI", # Wolford AG
     "YOU.DE", # ABOUT YOU
+    "PPH.JO", # Pepkor
+    "FOI-B.ST", # Fenix Outdoor
+    "OVS.MI", # OVS S.p.A.
+    "BOOZT.ST", # Boozt
+    "3612.T", # World Co., Ltd.
+    "4012.SR", # Thob Al Aseel Company
+    "LINDEX.HE", # Lindex Group
+    "DLTI.TA", # Delta Israel Brands
+    "RVRC.ST", # RVRC Holding
+    # "ILP.PK", # Interloop WERKT NIET
+    "0709.HK", # Giordano
+    "2368.HK", # Eagle Nice
+    "SMCP.PA", # SMCP S.A.
 ]
 
 us_tickers = [
@@ -101,6 +114,7 @@ us_tickers = [
     "RENT", # Rent the Runway
     "ROST", # Ross Stores
     "GPS", # Gap
+    "GAP", # Gap Inc. (alternate ticker)
     "BBWI", # L Brands -> Bath & Body Works
     "PVH", # PVH HQ
     "VIPS", # Vipshop Holdings
@@ -123,5 +137,13 @@ us_tickers = [
     "FOSL", # Fossil
     "EXPR", # Express
     "VRA", # Vera Bradley
-    "CATO" # Cato Fashion
+    "CATO", # Cato Fashion
+    "CTAS", # Cintas
+    "BOOT", # Boot Barn Holdings
+    "UNF", # UniFirst
+    "RVLV", # Revolve
+    "SVV", # Savers Value Village
+    "CURV", # Torrid
+    "JILL", # J.Jill
+    "SGC", # Superior Group of Companies
 ]

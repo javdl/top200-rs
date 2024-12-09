@@ -351,3 +351,10 @@ HGTX3.SA (Cia Hering) - Merged with Grupo Soma in 2021, now part of SOMA3.SA
 ASNA (Ascena Retail Group) - Filed for bankruptcy in 2020 and was delisted
 GWI1.DE (Gerry Weber) - Filed for insolvency in 2019, restructured and now trades as GWI2.DE
 FRAN (Francesca's) - Filed for bankruptcy in 2020 and was delisted
+
+Fetching data for DLTI.TA
+⚠️  Warning: No conversion rate found for ILA to USD
+⚠️  Warning: No conversion rate found for ILA to EUR
+⚠️  Warning: No conversion rate found for ILA to USD
+
+Zou ILS moeten zijn wss?
