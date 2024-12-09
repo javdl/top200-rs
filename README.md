@@ -338,3 +338,16 @@ COH - Coach, Inc -> TPR (Tapestry)
 KORS - Michael Kors, Inc. -> CPRI (Michael Kors is now Capri Holdings)
 LB - L Brands, Inc. -> BBWI (L Brands is now Bath & Body Works)
 Updated some tickers that have changed:
+
+TIF (Tiffany & Co.) - Delisted after being acquired by LVMH in January 2021
+YNAP.MI (YOOX Net-a-Porter Group) - Delisted after being fully acquired by Richemont in 2018
+SPD.L (Sports Direct) - Changed name and ticker to Frasers Group (FRAS.L) in 2019
+ALPA4.SA (Alpargatas) - Still trades on Brazilian exchange as ALPA4.SA and ALPA3.SA - might be a data provider issue
+SGP.L (Supergroup) - Changed name and ticker to Superdry (SDRY.L)
+TED.L (Ted Baker) - Delisted in 2023 after being acquired by Authentic Brands Group
+DSW (Designer Shoe Warehouse) - Changed name and ticker to Designer Brands Inc. (DBI)
+HBC.TO (Hudson's Bay) - Delisted in March 2020 after going private
+HGTX3.SA (Cia Hering) - Merged with Grupo Soma in 2021, now part of SOMA3.SA
+ASNA (Ascena Retail Group) - Filed for bankruptcy in 2020 and was delisted
+GWI1.DE (Gerry Weber) - Filed for insolvency in 2019, restructured and now trades as GWI2.DE
+FRAN (Francesca's) - Filed for bankruptcy in 2020 and was delisted
