@@ -729,6 +729,7 @@ fn get_rate_map() -> HashMap<String, f64> {
     rate_map.insert("CNY/USD".to_string(), 0.139);
     rate_map.insert("BRL/USD".to_string(), 0.203);
     rate_map.insert("CAD/USD".to_string(), 0.737);
+    rate_map.insert("ILS/USD".to_string(), 0.27);  // Adding Israeli Shekel rate
     
     rate_map
 }

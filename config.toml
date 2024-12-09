@@ -36,7 +36,7 @@ non_us_tickers = [
     "BC.MI", # Brunello Cucinelli
     "2331.HK", # Li Ning
     "SDRY.L", # Supergroup -> Superdry
-    "ABFRL.NS", # Pantaloons
+    "ABFRL.NS", # Aditya Birla Fashion and Retail
     "ARVIND.NS", # Arvind
     "8016.T", # Onward Holdings
     "7606.T", # United Arrows
@@ -67,10 +67,20 @@ non_us_tickers = [
     "LINDEX.HE", # Lindex Group
     "DLTI.TA", # Delta Israel Brands
     "RVRC.ST", # RVRC Holding
-    # "ILP.PK", # Interloop WERKT NIET
+    "ILP.PK", # Interloop
     "0709.HK", # Giordano
     "2368.HK", # Eagle Nice
     "SMCP.PA", # SMCP S.A.
+    "MONTECARLO.NS", # Monte Carlo Fashions
+    "DOLLAR.NS", # Dollar Industries
+    "LUXIND.NS", # Lux Industries
+    "LPP.WA", # LPP SA
+    "MAVI.IS", # Mavi Giyim Sanayi ve Ticaret
+    "6110.HK", # Topsports International
+    "PMNT", # Perfect Moment
+    "CALN.SW", # CALIDA Holding
+    "ECK.DE", # LUDWIG BECK am Rathauseck
+    "NXT.MC", # Nueva Expresión Textil
 ]
 
 us_tickers = [
@@ -146,4 +156,6 @@ us_tickers = [
     "CURV", # Torrid
     "JILL", # J.Jill
     "SGC", # Superior Group of Companies
+    "MGOL", # MGO Global
+    "LITB", # LightInTheBox Holding
 ]
