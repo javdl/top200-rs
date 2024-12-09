@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
     dotenv().ok();
 
     let options = vec![
-        "Export combined EU + US stock marketcaps to CSV".to_string(),
+        "Export combined US & non-US stock marketcaps to CSV & generate treemap".to_string(),
         "Export currency exchange rates to CSV".to_string(),
         "List US stock marketcaps (Polygon API)".to_string(),
         "List EU stock marketcaps".to_string(),
@@ -33,7 +33,7 @@ async fn main() -> Result<()> {
 
     match selected {
         Some(ans) => match ans.as_str() {
-            "Export combined EU + US stock marketcaps to CSV" => {
+            "Export combined US & non-US stock marketcaps to CSV & generate treemap" => {
                 let api_key = env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set");
                 let fmp_client = api::FMPClient::new(api_key);
                 export_details_combined_csv(&fmp_client).await?;
@@ -47,7 +47,7 @@ async fn main() -> Result<()> {
             "List EU stock marketcaps" => list_details_eu().await?,
             "Export US stock marketcaps to CSV" => export_details_us_csv().await?,
             "Export EU stock marketcaps to CSV" => export_details_eu_csv().await?,
-            "Generate Market Heatmap" => generate_market_heatmap().await?,
+            "Generate Market Heatmap" => export_details_combined_csv(&api::FMPClient::new(env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set"))).await?,
             "Exit" => println!("Exiting..."),
             _ => unreachable!(),
         },
@@ -494,12 +494,38 @@ async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> 
     results.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
     // Write sorted results to CSV
-    for (_, record) in results {
-        writer.write_record(&record)?;
+    for (_, record) in &results {  
+        writer.write_record(&*record)?;  // Dereference to get &[String]
     }
 
     println!("📝 CSV file created: {}", filename);
     println!("💶 Results are sorted by market cap in EUR (highest to lowest)");
+
+    // Generate heatmap
+    println!("\nGenerating market heatmap...");
+    let heatmap_filename = format!("output/heatmap_{}.png", timestamp);
+    generate_market_heatmap(&results, &heatmap_filename)?;
+    println!("🎨 Heatmap generated: {}", heatmap_filename);
+
+    Ok(())
+}
+
+fn generate_market_heatmap(results: &[(f64, Vec<String>)], output_path: &str) -> Result<()> {
+    let mut stocks = Vec::new();
+    
+    // Only take the first 100 results since they're already sorted by market cap
+    for (market_cap, data) in results.iter().take(100) {
+        if *market_cap > 0.0 {  // Skip error entries
+            stocks.push((*market_cap, viz::StockData {
+                symbol: data[0].clone(),
+                market_cap_eur: *market_cap,
+                employees: data[11].clone(),  
+            }));
+        }
+    }
+
+    println!("📊 Generating heatmap with top {} companies", stocks.len());
+    viz::create_market_heatmap(stocks.into_iter().map(|(_, data)| data).collect(), output_path)?;
     Ok(())
 }
 
@@ -569,64 +595,6 @@ async fn export_exchange_rates_csv(fmp_client: &api::FMPClient) -> Result<()> {
     Ok(())
 }
 
-async fn generate_market_heatmap() -> Result<()> {
-    let api_key = env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set");
-    let fmp_client = api::FMPClient::new(api_key);
-    
-    // Load tickers from config
-    let config = config::load_config()?;
-    let non_us_tickers = config.non_us_tickers;
-    let us_tickers = config.us_tickers;
-
-    println!("Fetching market data for {} companies...", non_us_tickers.len() + us_tickers.len());
-    
-    let mut stocks = Vec::new();
-    let eur_to_usd = 1.10; // Approximate conversion rate, you might want to fetch this dynamically
-
-    // Process EU stocks
-    for ticker in non_us_tickers.iter() {
-        if let Ok(details) = fmp_client.get_details(&ticker, &get_rate_map()).await {
-            if let Some(market_cap) = details.market_cap {
-                let market_cap_eur = if details.currency_name.unwrap_or_default() == "USD" {
-                    market_cap / eur_to_usd
-                } else {
-                    market_cap
-                };
-                stocks.push(viz::StockData {
-                    symbol: details.ticker,
-                    market_cap_eur,
-                    employees: details.employees.unwrap_or_default(),
-                });
-            }
-        }
-    }
-
-    // Process US stocks
-    for ticker in us_tickers.iter() {
-        if let Ok(details) = fmp_client.get_details(&ticker, &get_rate_map()).await {
-            if let Some(market_cap) = details.market_cap {
-                // Convert USD to EUR
-                let market_cap_eur = market_cap / eur_to_usd;
-                stocks.push(viz::StockData {
-                    symbol: details.ticker,
-                    market_cap_eur,
-                    employees: details.employees.unwrap_or_default(),
-                });
-            }
-        }
-    }
-
-    // Sort by market cap descending and take top 50
-    stocks.sort_by(|a, b| b.market_cap_eur.partial_cmp(&a.market_cap_eur).unwrap());
-    stocks.truncate(50);
-
-    let timestamp = Local::now().format("%Y%m%d_%H%M%S").to_string();
-    let output_path = format!("output/market_heatmap_{}.png", timestamp);
-    viz::create_market_heatmap(stocks, &output_path)?;
-    println!("Market heatmap generated at: {}", output_path);
-    Ok(())
-}
-
 async fn export_marketcap_with_progress(tickers: Vec<String>, output_path: &str) -> Result<()> {
     let mut writer = Writer::from_path(output_path)?;
 
@@ -690,7 +658,6 @@ async fn export_marketcap_with_progress(tickers: Vec<String>, output_path: &str)
                     "",
                     "",
                     &error_msg,
-                    "",
                     "",
                     "",
                     "",
