@@ -51,9 +51,18 @@ non_us_tickers = [
     "WOSG.L", # Watches of Switzerland
     "MEKKO.HE", # Marimekko
     "AEF.MI", # Aeffe
+    "BORG.ST", # Björn Borg
+    "GFG.DE", # Global Fashion Group
+    # "GRGD.TO", # Groupe Dynamite -> Garage -> WERKT NIET?
+    "KER.PA", # Kering
+    "SFL.MI", # Safilo Group
+    "WOL.VI", # Wolford AG
+    "YOU.DE", # ABOUT YOU
 ]
 
 us_tickers = [
+    "BCUCY", # Brunello Cucinelli
+    "MYTE", # Mytheresa
     "BIRK", # Birkenstock
     "DBI", # DSW -> Designer Brands Inc. (DBI)
     "NKE", # Nike

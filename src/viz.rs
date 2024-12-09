@@ -19,7 +19,7 @@ fn worst_ratio(row: &[(f64, StockData)], width: f64) -> f64 {
     if row.is_empty() {
         return f64::INFINITY;
     }
-    let sum: f64 = row.iter().map(|(area, _)| *area).sum();
+    let sum: f64 = row.iter().map(|(area, _)| *area).sum::<f64>();
     let height = sum / width;
     row.iter().fold(0.0, |worst, (area, _)| {
         let rect_width = *area / height;
@@ -38,13 +38,13 @@ fn layout_row(
     x: i32,
     y: i32,
 ) -> Vec<(Rectangle, StockData)> {
-    let total_area: f64 = row.iter().map(|(area, _)| *area).sum();
-    let height = (total_area / width as f64) as i32;
+    let _total_area: f64 = row.iter().map(|(area, _)| *area).sum::<f64>();
+    let height = (row.iter().map(|(area, _)| *area).sum::<f64>() / width as f64) as i32;
     let mut current_x = x;
     let mut result = Vec::new();
 
     for (area, stock) in row {
-        let rect_width = (*area / total_area * width as f64) as i32;
+        let rect_width = (*area / row.iter().map(|(area, _)| *area).sum::<f64>() * width as f64) as i32;
         result.push((
             Rectangle {
                 x: current_x,
@@ -70,7 +70,7 @@ fn squarify(
         return Vec::new();
     }
 
-    let total_area: f64 = stocks.iter().map(|(area, _)| *area).sum();
+    let _total_area: f64 = stocks.iter().map(|(area, _)| *area).sum::<f64>();
     let shortest_side = width.min(height) as f64;
     
     let mut current_row = Vec::new();
@@ -105,7 +105,7 @@ fn squarify(
                     .collect()
             };
 
-            let current_area: f64 = current_row.iter().map(|(area, _)| *area).sum();
+            let current_area: f64 = current_row.iter().map(|(area, _)| *area).sum::<f64>();
             let remaining_width = if width < height {
                 width
             } else {

@@ -19,6 +19,7 @@ pub struct Details {
     pub weighted_shares_outstanding: Option<f64>,
     pub employees: Option<String>,
     pub revenue: Option<f64>,
+    pub revenue_usd: Option<f64>,
     // Financial ratios
     pub working_capital_ratio: Option<f64>,
     pub quick_ratio: Option<f64>,
@@ -95,6 +96,27 @@ pub struct FMPIncomeStatement {
     // Add catch-all for other fields
     #[serde(flatten)]
     pub extra: std::collections::HashMap<String, Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Stock {
+    pub ticker: String,
+    pub name: String,
+    pub market_cap: f64,
+    pub currency_name: String,
+    pub currency_symbol: String,
+    pub active: bool,
+    pub description: String,
+    pub homepage_url: String,
+    pub employees: String,
+    pub revenue: f64,
+    pub revenue_usd: f64,
+    pub working_capital_ratio: f64,
+    pub quick_ratio: f64,
+    pub eps: f64,
+    pub pe_ratio: f64,
+    pub debt_equity_ratio: f64,
+    pub roe: f64,
 }
 
 fn default_string() -> String {

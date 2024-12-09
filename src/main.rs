@@ -3,13 +3,16 @@ mod models;
 mod tui;
 mod viz;
 mod config;
+mod utils;
 
+use std::{collections::HashMap, env, path::PathBuf, time::Duration};
 use anyhow::Result;
 use chrono::{Local, NaiveDate};
 use csv::Writer;
 use dotenv::dotenv;
-use std::{env, path::PathBuf, time::Duration};
 use tokio;
+
+pub use utils::convert_currency;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -80,6 +83,7 @@ async fn export_details_eu_csv() -> Result<()> {
         "Homepage URL",
         "Employees",
         "Revenue",
+        "Revenue (USD)",
         "Working Capital Ratio",
         "Quick Ratio",
         "EPS",
@@ -88,9 +92,22 @@ async fn export_details_eu_csv() -> Result<()> {
         "ROE",
     ])?;
 
-    for (i, ticker) in tickers.iter().enumerate() {
-        println!("\nFetching the marketcap for {} ({}/{}) ⌛️", ticker, i + 1, tickers.len());
-        match api::get_details_eu(ticker).await {
+    let rate_map = get_rate_map();
+
+    let mut tasks = Vec::new();
+
+    for ticker in tickers {
+        let ticker = ticker.clone();
+        let rate_map = rate_map.clone();
+        tasks.push(tokio::spawn(async move {
+            let details = api::get_details_eu(&ticker, &rate_map).await;
+            (ticker, details)
+        }));
+    }
+
+    for task in tasks {
+        let (ticker, details) = task.await?;
+        match details {
             Ok(details) => {
                 writer.write_record(&[
                     &details.ticker,
@@ -104,6 +121,7 @@ async fn export_details_eu_csv() -> Result<()> {
                     &details.homepage_url.unwrap_or_default(),
                     &details.employees.unwrap_or_default(),
                     &details.revenue.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.revenue_usd.map(|r| r.to_string()).unwrap_or_default(),
                     &details.working_capital_ratio.map(|r| r.to_string()).unwrap_or_default(),
                     &details.quick_ratio.map(|r| r.to_string()).unwrap_or_default(),
                     &details.eps.map(|r| r.to_string()).unwrap_or_default(),
@@ -118,7 +136,7 @@ async fn export_details_eu_csv() -> Result<()> {
                 // Write empty row for failed ticker
                 let error_msg = format!("Error: {}", e);
                 writer.write_record(&[
-                    ticker,
+                    &ticker,
                     "",
                     "",
                     "",
@@ -173,6 +191,7 @@ async fn export_details_us_csv() -> Result<()> {
         "Homepage URL",
         "Employees",
         "Revenue",
+        "Revenue (USD)",
         "Working Capital Ratio",
         "Quick Ratio",
         "EPS",
@@ -195,6 +214,7 @@ async fn export_details_us_csv() -> Result<()> {
                     &details.homepage_url.unwrap_or_default(),
                     &details.employees.unwrap_or_default(),
                     &details.revenue.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.revenue_usd.map(|r| r.to_string()).unwrap_or_default(),
                     &details.working_capital_ratio.map(|r| r.to_string()).unwrap_or_default(),
                     &details.quick_ratio.map(|r| r.to_string()).unwrap_or_default(),
                     &details.eps.map(|r| r.to_string()).unwrap_or_default(),
@@ -209,12 +229,13 @@ async fn export_details_us_csv() -> Result<()> {
                 // Write empty row for failed ticker
                 let error_msg = format!("Error: {}", e);
                 writer.write_record(&[
-                    ticker,
+                    &ticker,
                     "",
                     "",
                     "",
                     "",
                     &error_msg,
+                    "",
                     "",
                     "",
                     "",
@@ -264,9 +285,22 @@ async fn list_details_eu() -> Result<()> {
     let config = config::load_config()?;
     let tickers = config.non_us_tickers;
 
-    for (i, ticker) in tickers.iter().enumerate() {
-        println!("\nFetching the marketcap for {} ({}/{}) ⌛️", ticker, i + 1, tickers.len());
-        match api::get_details_eu(ticker).await {
+    let rate_map = get_rate_map();
+
+    let mut tasks = Vec::new();
+
+    for ticker in tickers {
+        let ticker = ticker.clone();
+        let rate_map = rate_map.clone();
+        tasks.push(tokio::spawn(async move {
+            let details = api::get_details_eu(&ticker, &rate_map).await;
+            (ticker, details)
+        }));
+    }
+
+    for task in tasks {
+        let (ticker, details) = task.await?;
+        match details {
             Ok(details) => {
                 println!("Company: {}", details.name.unwrap_or_default());
                 if let Some(market_cap) = details.market_cap {
@@ -379,6 +413,7 @@ async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> 
         "Homepage URL",
         "Employees",
         "Revenue",
+        "Revenue (USD)",
         "Working Capital Ratio",
         "Quick Ratio",
         "EPS",
@@ -391,7 +426,7 @@ async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> 
     let mut results = Vec::new();
     for ticker in tickers {
         println!("Fetching data for {}", ticker);
-        match fmp_client.get_details(&ticker).await {
+        match fmp_client.get_details(&ticker, &rate_map).await {
             Ok(details) => {
                 let original_market_cap = details.market_cap.unwrap_or(0.0);
                 let currency = details.currency_symbol.clone().unwrap_or_default();
@@ -414,6 +449,7 @@ async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> 
                         details.homepage_url.unwrap_or_default(),
                         details.employees.unwrap_or_default(),
                         details.revenue.map(|r| r.to_string()).unwrap_or_default(),
+                        details.revenue_usd.map(|r| r.to_string()).unwrap_or_default(),
                         details.working_capital_ratio.map(|r| r.to_string()).unwrap_or_default(),
                         details.quick_ratio.map(|r| r.to_string()).unwrap_or_default(),
                         details.eps.map(|r| r.to_string()).unwrap_or_default(),
@@ -549,7 +585,7 @@ async fn generate_market_heatmap() -> Result<()> {
 
     // Process EU stocks
     for ticker in non_us_tickers.iter() {
-        if let Ok(details) = fmp_client.get_details(ticker).await {
+        if let Ok(details) = fmp_client.get_details(&ticker, &get_rate_map()).await {
             if let Some(market_cap) = details.market_cap {
                 let market_cap_eur = if details.currency_name.unwrap_or_default() == "USD" {
                     market_cap / eur_to_usd
@@ -567,7 +603,7 @@ async fn generate_market_heatmap() -> Result<()> {
 
     // Process US stocks
     for ticker in us_tickers.iter() {
-        if let Ok(details) = fmp_client.get_details(ticker).await {
+        if let Ok(details) = fmp_client.get_details(&ticker, &get_rate_map()).await {
             if let Some(market_cap) = details.market_cap {
                 // Convert USD to EUR
                 let market_cap_eur = market_cap / eur_to_usd;
@@ -589,4 +625,143 @@ async fn generate_market_heatmap() -> Result<()> {
     viz::create_market_heatmap(stocks, &output_path)?;
     println!("Market heatmap generated at: {}", output_path);
     Ok(())
+}
+
+async fn export_marketcap_with_progress(tickers: Vec<String>, output_path: &str) -> Result<()> {
+    let mut writer = Writer::from_path(output_path)?;
+
+    writer.write_record(&[
+        "Ticker",
+        "Market Cap",
+        "Name",
+        "Currency Name",
+        "Currency Symbol",
+        "Active",
+        "Description",
+        "Homepage URL",
+        "Employees",
+        "Revenue",
+        "Revenue (USD)",
+        "Working Capital Ratio",
+        "Quick Ratio",
+        "EPS",
+        "P/E Ratio",
+        "D/E Ratio",
+        "ROE",
+    ])?;
+
+    let rate_map = get_rate_map();
+    let fmp_client = api::FMPClient::new(env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set"));
+
+    for ticker in tickers {
+        match fmp_client.get_details(&ticker, &rate_map).await {
+            Ok(details) => {
+                writer.write_record(&[
+                    &details.ticker,
+                    &details.market_cap.map(|m| m.to_string()).unwrap_or_default(),
+                    &details.name.unwrap_or_default(),
+                    &details.currency_name.unwrap_or_default(),
+                    &details.currency_symbol.unwrap_or_default(),
+                    &details.active.map(|a| a.to_string()).unwrap_or_default(),
+                    &details.description.unwrap_or_default(),
+                    &details.homepage_url.unwrap_or_default(),
+                    &details.employees.unwrap_or_default(),
+                    &details.revenue.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.revenue_usd.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.working_capital_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.quick_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.eps.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.pe_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.debt_equity_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.roe.map(|r| r.to_string()).unwrap_or_default(),
+                ])?;
+                println!("✅ Data written to CSV");
+            }
+            Err(e) => {
+                eprintln!("Error fetching details for {}: {}", ticker, e);
+                // Write empty row for failed ticker
+                let error_msg = format!("Error: {}", e);
+                writer.write_record(&[
+                    &ticker,
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    &error_msg,
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                ])?;
+            }
+        }
+    }
+
+    writer.flush()?;
+    println!("\n✅ CSV file created at: {}", output_path);
+    Ok(())
+}
+
+async fn export_marketcap_to_json(tickers: Vec<String>, output_path: &str) -> Result<()> {
+    let rate_map = get_rate_map();
+    let fmp_client = api::FMPClient::new(env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set"));
+    let mut stocks = Vec::new();
+
+    for ticker in tickers {
+        if let Ok(details) = fmp_client.get_details(&ticker, &rate_map).await {
+            stocks.push(models::Stock {
+                ticker: details.ticker,
+                name: details.name.unwrap_or_default(),
+                market_cap: details.market_cap.unwrap_or_default(),
+                currency_name: details.currency_name.unwrap_or_default(),
+                currency_symbol: details.currency_symbol.unwrap_or_default(),
+                active: details.active.unwrap_or_default(),
+                description: details.description.unwrap_or_default(),
+                homepage_url: details.homepage_url.unwrap_or_default(),
+                employees: details.employees.unwrap_or_default(),
+                revenue: details.revenue.unwrap_or_default(),
+                revenue_usd: details.revenue_usd.unwrap_or_default(),
+                working_capital_ratio: details.working_capital_ratio.unwrap_or_default(),
+                quick_ratio: details.quick_ratio.unwrap_or_default(),
+                eps: details.eps.unwrap_or_default(),
+                pe_ratio: details.pe_ratio.unwrap_or_default(),
+                debt_equity_ratio: details.debt_equity_ratio.unwrap_or_default(),
+                roe: details.roe.unwrap_or_default(),
+            });
+        } else {
+            eprintln!("Error fetching details for {}", ticker);
+        }
+    }
+
+    let json = serde_json::to_string_pretty(&stocks)?;
+    std::fs::write(output_path, json)?;
+    println!("✅ JSON file created at: {}", output_path);
+    Ok(())
+}
+
+fn get_rate_map() -> HashMap<String, f64> {
+    let mut rate_map = HashMap::new();
+    
+    // Base rates (currency to USD)
+    rate_map.insert("EUR/USD".to_string(), 1.08);
+    rate_map.insert("GBP/USD".to_string(), 1.25);
+    rate_map.insert("CHF/USD".to_string(), 1.14);
+    rate_map.insert("SEK/USD".to_string(), 0.096);
+    rate_map.insert("DKK/USD".to_string(), 0.145);
+    rate_map.insert("NOK/USD".to_string(), 0.093);
+    rate_map.insert("JPY/USD".to_string(), 0.0068);
+    rate_map.insert("HKD/USD".to_string(), 0.128);
+    rate_map.insert("CNY/USD".to_string(), 0.139);
+    rate_map.insert("BRL/USD".to_string(), 0.203);
+    rate_map.insert("CAD/USD".to_string(), 0.737);
+    
+    rate_map
 }
