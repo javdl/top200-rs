@@ -331,3 +331,10 @@ MUL.L # Mulberry
 VAN.BR # Van de Velde
 GWI1.DE # Gerry Weber
 Note: Some markets might have limited data availability through FinancialModelingPrep API, especially for smaller international companies. It would be good to verify data availability for these symbols before using them in your application.
+
+## Changelog
+
+COH - Coach, Inc -> TPR (Tapestry)
+KORS - Michael Kors, Inc. -> CPRI (Michael Kors is now Capri Holdings)
+LB - L Brands, Inc. -> BBWI (L Brands is now Bath & Body Works)
+Updated some tickers that have changed:

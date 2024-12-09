@@ -7,7 +7,7 @@ eu_tickers = [
     "CFR.SW", # Richemont
     "ADS.DE", # adidas
     "9983.T", # Fast Retailing
-    "LUX.MI", # Luxottica
+    "EL.PA", # Luxottica
     "HM-B.ST", # H&M
     "UHR.SW", # Swatch Group
     "ZAL.DE", # Zalando
@@ -24,41 +24,39 @@ eu_tickers = [
     "GIL.TO", # Gildan
     "JD.L", # JD Sports
     "SFER.MI", # Salvatore Ferragamo
-    "YNAP.MI", # YOOX Net-a-Porter Group
     "002563.SZ", # Semir
     "7936.T", # Asics
     "600612.SS", # Lao Feng Xiang Jewelry
     "BOO.L", # Boohoo.Com
-    "SPD.L", # Sports Direct
+    "FRAS.L", # Sports Direct -> Frasers Group
     "GRND3.SA", # Grendene
     "TOD.MI", # TOD'S
     "ALPA4.SA", # Alpargatas - Havaianas
     "BC.MI", # Brunello Cucinelli
     "2331.HK", # Li Ning
     "SGP.L", # Supergroup
-    "TED.L", # Ted Baker
     "ABFRL.NS", # Pantaloons
     "ARVIND.NS", # Arvind
     "8016.T", # Onward Holdings
-    "HBC.TO", # Hudson's Bay
     "7606.T", # United Arrows
     "002269.SZ", # Metersbonwe
-    "HGTX3.SA", # Cia Hering
+    "SOMA3.SA", # Cia Hering -> Merged with Grupo Soma in 2021, now part of SOMA3.SA
     "3998.HK", # Bosideng
     "GEO.MI", # GEOX
     "0330.HK", # Esprit
     "MUL.L", # Mulberry
     "VAN.BR", # Van de Velde
-    "GWI1.DE", # Gerry Weber
+    "GWI2.DE", # Gerry Weber
 ]
 
 us_tickers = [
+    "DBI", # DSW -> Designer Brands Inc. (DBI)
     "NKE", # Nike
     "TJX", # TJX
     "VFC", # VF
-    "COH", # Coach
+    "TPR", # Coach -> Tapestry
     "LULU", # Lululemon
-    "KORS", # Michael Kors
+    "CPRI", # Michael Kors -> Capri Holdings
     "M", # Macy's
     "RL", # Ralph Lauren
     "JWN", # Nordstrom
@@ -70,7 +68,7 @@ us_tickers = [
     "DECK", # Deckers Outdoor
     "WWW", # Wolverine
     "BOO.L", # Boohoo.Com
-    "SPD.L", # Sports Direct
+    "FRAS.L", # Sports Direct -> Frasers Group
 ]
 
 tickers = [
@@ -84,16 +82,15 @@ tickers = [
     "CFR.SW", # Richemont
     "ADS.DE", # adidas
     "9983.T", # Fast Retailing
-    "LUX.MI", # Luxottica
+    "EL.PA", # Luxottica
     "ROST", # Ross Stores
     "VFC", # VF
     "HM-B.ST", # H&M
     "UHR.SW", # Swatch Group
-    "COH", # Coach
+    "TPR", # Coach -> Tapestry
     "ZAL.DE", # Zalando
     "GPS", # Gap
-    "LB", # L Brands
-    "TIF", # Tiffany & Co.
+    "BBWI", # L Brands -> Bath & Body Works
     "1929.HK", # Chow Tai Fook
     "PVH", # PVH HQ
     "LULU", # Lululemon
@@ -101,7 +98,7 @@ tickers = [
     "VIPS", # Vipshop Holdings
     "BRBY.L", # Burberry
     "NXT.L", # Next
-    "KORS", # Michael Kors
+    "CPRI", # Michael Kors -> Capri Holdings
     "M", # Macy's
     "MONC.MI", # Moncler
     "RL", # Ralph Lauren
@@ -120,7 +117,6 @@ tickers = [
     "JD.L", # JD Sports
     "FL", # Foot locker
     "SFER.MI", # Salvatore Ferragamo
-    "YNAP.MI", # YOOX Net-a-Porter Group
     "002563.SZ", # Semir
     "URBN", # Urban Outfitters
     "AEO", # American Eagle Outfitters
@@ -130,7 +126,7 @@ tickers = [
     "600612.SS", # Lao Feng Xiang Jewelry
     "WWW", # Wolverine
     "BOO.L", # Boohoo.Com
-    "SPD.L", # Sports Direct
+    "FRAS.L", # Sports Direct -> Frasers Group
     "SHOO", # Steve Madden
     "GRND3.SA", # Grendene
     "TOD.MI", # TOD'S
@@ -140,21 +136,19 @@ tickers = [
     "BC.MI", # Brunello Cucinelli
     "2331.HK", # Li Ning
     "SGP.L", # Supergroup
-    "TED.L", # Ted Baker
     "GIII", # G-III Apparel Group
     "ABFRL.NS", # Pantaloons
-    "DSW", # DSW
+    "DBI", # DSW -> Designer Brands Inc. (DBI)
     "ARVIND.NS", # Arvind
     "8016.T", # Onward Holdings
     "ANF", # Abercrombie & Fitch
     "OXM", # Oxford Industries
-    "HBC.TO", # Hudson's Bay
     "GES", # GUESS
     "7606.T", # United Arrows
     "CAL", # Caleres
     "CHS", # Chico's    "JCP", # J.C. Penney
     "002269.SZ", # Metersbonwe
-    "HGTX3.SA", # Cia Hering
+    "SOMA3.SA", # Cia Hering -> Merged with Grupo Soma in 2021, now part of SOMA3.SA
     "BKE", # Buckle
     "3998.HK", # Bosideng
     "GEO.MI", # GEOX
@@ -164,9 +158,7 @@ tickers = [
     "FOSL", # Fossil
     "VAN.BR", # Van de Velde
     "EXPR", # Express
-    "ASNA", # Ascena Retail Group
-    "GWI1.DE", # Gerry Weber
+    "GWI2.DE", # Gerry Weber
     "VRA", # Vera Bradley
-    "CATO", # Cato Fashion
-    "FRAN" # Francesca's
+    "CATO" # Cato Fashion
 ]
