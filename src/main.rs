@@ -79,6 +79,13 @@ async fn export_details_eu_csv() -> Result<()> {
         "Description",
         "Homepage URL",
         "Employees",
+        "Revenue",
+        "Working Capital Ratio",
+        "Quick Ratio",
+        "EPS",
+        "P/E Ratio",
+        "D/E Ratio",
+        "ROE",
     ])?;
 
     for (i, ticker) in tickers.iter().enumerate() {
@@ -96,6 +103,13 @@ async fn export_details_eu_csv() -> Result<()> {
                     &details.description.unwrap_or_default(),
                     &details.homepage_url.unwrap_or_default(),
                     &details.employees.unwrap_or_default(),
+                    &details.revenue.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.working_capital_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.quick_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.eps.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.pe_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.debt_equity_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.roe.map(|r| r.to_string()).unwrap_or_default(),
                 ])?;
                 println!("✅ Data written to CSV");
             }
@@ -112,6 +126,13 @@ async fn export_details_eu_csv() -> Result<()> {
                     "",
                     "",
                     &error_msg,
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
                     "",
                     "",
                 ])?;
@@ -151,6 +172,13 @@ async fn export_details_us_csv() -> Result<()> {
         "Description",
         "Homepage URL",
         "Employees",
+        "Revenue",
+        "Working Capital Ratio",
+        "Quick Ratio",
+        "EPS",
+        "P/E Ratio",
+        "D/E Ratio",
+        "ROE",
     ])?;
 
     for (i, ticker) in tickers.iter().enumerate() {
@@ -166,6 +194,13 @@ async fn export_details_us_csv() -> Result<()> {
                     &details.description.unwrap_or_default(),
                     &details.homepage_url.unwrap_or_default(),
                     &details.employees.unwrap_or_default(),
+                    &details.revenue.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.working_capital_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.quick_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.eps.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.pe_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.debt_equity_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                    &details.roe.map(|r| r.to_string()).unwrap_or_default(),
                 ])?;
                 println!("✅ Data written to CSV");
             }
@@ -180,6 +215,13 @@ async fn export_details_us_csv() -> Result<()> {
                     "",
                     "",
                     &error_msg,
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
                     "",
                     "",
                 ])?;
@@ -336,6 +378,13 @@ async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> 
         "Description",
         "Homepage URL",
         "Employees",
+        "Revenue",
+        "Working Capital Ratio",
+        "Quick Ratio",
+        "EPS",
+        "P/E Ratio",
+        "D/E Ratio",
+        "ROE",
     ])?;
 
     // Collect all results first
@@ -364,6 +413,13 @@ async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> 
                         details.description.unwrap_or_default(),
                         details.homepage_url.unwrap_or_default(),
                         details.employees.unwrap_or_default(),
+                        details.revenue.map(|r| r.to_string()).unwrap_or_default(),
+                        details.working_capital_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                        details.quick_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                        details.eps.map(|r| r.to_string()).unwrap_or_default(),
+                        details.pe_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                        details.debt_equity_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                        details.roe.map(|r| r.to_string()).unwrap_or_default(),
                     ]
                 ));
                 println!("✅ Data collected");
@@ -383,6 +439,12 @@ async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> 
                         "".to_string(),
                         "".to_string(),
                         format!("Error: {}", e),
+                        "".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                        "".to_string(),
+                        "".to_string(),
                         "".to_string(),
                         "".to_string(),
                     ]

@@ -6,7 +6,7 @@ use serde_json;
 use std::{env, time::Duration};
 use tokio::time::sleep;
 
-use crate::models::{Details, PolygonResponse, FMPCompanyProfile};
+use crate::models::{Details, PolygonResponse, FMPCompanyProfile, FMPRatios, FMPIncomeStatement};
 
 pub struct PolygonClient {
     client: Client,
@@ -51,23 +51,17 @@ impl FMPClient {
         let text = response.text().await.context("Failed to get response text")?;
 
         if !status.is_success() {
-            anyhow::bail!("API error: {} - {}", status, text);
+            anyhow::bail!("API request failed: {}", text);
         }
 
-        // FMP returns an array with a single company profile
-        let profiles: Vec<FMPCompanyProfile> = match serde_json::from_str(&text) {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("Failed to parse response: {}", e);
-                eprintln!("Raw response: {}", text);
-                return Err(e).context("Failed to parse FMP response");
-            }
-        };
-        
-        let profile = profiles.first()
-            .ok_or_else(|| anyhow::anyhow!("No company profile found"))?;
+        let profiles: Vec<FMPCompanyProfile> = serde_json::from_str(&text)
+            .context("Failed to parse FMP response")?;
 
-        // Map currency code to symbol
+        let profile = profiles
+            .into_iter()
+            .next()
+            .context("No profile data returned")?;
+
         let currency_symbol = match profile.currency.as_str() {
             "USD" => "$",
             "EUR" => "€",
@@ -76,6 +70,10 @@ impl FMPClient {
             "DKK" => "kr",
             _ => &profile.currency,
         };
+
+        // Fetch ratios and income statement
+        let ratios = self.get_ratios(ticker).await?;
+        let income = self.get_income_statement(ticker).await?;
 
         Ok(Details {
             ticker: profile.symbol.clone(),
@@ -86,10 +84,87 @@ impl FMPClient {
             active: Some(profile.is_active),
             description: Some(profile.description.clone()),
             homepage_url: Some(profile.website.clone()),
-            weighted_shares_outstanding: None, // We don't have this data from FMP
+            weighted_shares_outstanding: None,
             employees: profile.employees.clone(),
+            revenue: income.as_ref().and_then(|i| i.revenue),
+            working_capital_ratio: ratios.as_ref().and_then(|r| r.current_ratio),
+            quick_ratio: ratios.as_ref().and_then(|r| r.quick_ratio),
+            eps: ratios.as_ref().and_then(|r| r.eps),
+            pe_ratio: ratios.as_ref().and_then(|r| r.price_earnings_ratio),
+            debt_equity_ratio: ratios.as_ref().and_then(|r| r.debt_equity_ratio),
+            roe: ratios.as_ref().and_then(|r| r.return_on_equity),
             extra: std::collections::HashMap::new(),
         })
+    }
+
+    pub async fn get_ratios(&self, ticker: &str) -> Result<Option<FMPRatios>> {
+        if ticker.is_empty() {
+            anyhow::bail!("ticker empty");
+        }
+
+        // Add a small delay to stay within rate limit
+        sleep(Duration::from_millis(200)).await;
+
+        let url = format!(
+            "https://financialmodelingprep.com/api/v3/ratios/{}?apikey={}",
+            ticker,
+            self.api_key
+        );
+
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .context("Failed to send request")?;
+
+        let status = response.status();
+        let text = response.text().await.context("Failed to get response text")?;
+
+        if !status.is_success() {
+            anyhow::bail!("API request failed: {}", text);
+        }
+
+        let ratios: Vec<FMPRatios> = serde_json::from_str(&text)
+            .context("Failed to parse FMP ratios response")?;
+
+        // Get the most recent ratios (first in the list)
+        Ok(ratios.into_iter().next())
+    }
+
+    pub async fn get_income_statement(&self, ticker: &str) -> Result<Option<FMPIncomeStatement>> {
+        if ticker.is_empty() {
+            anyhow::bail!("ticker empty");
+        }
+
+        // Add a small delay to stay within rate limit
+        sleep(Duration::from_millis(200)).await;
+
+        let url = format!(
+            "https://financialmodelingprep.com/api/v3/income-statement/{}?limit=1&apikey={}",
+            ticker,
+            self.api_key
+        );
+
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .context("Failed to send request")?;
+
+        let status = response.status();
+        let text = response.text().await.context("Failed to get response text")?;
+
+        if !status.is_success() {
+            anyhow::bail!("API request failed: {}", text);
+        }
+
+        let statements: Vec<FMPIncomeStatement> = serde_json::from_str(&text)
+            .context("Failed to parse FMP income statement response")?;
+
+        // Get the most recent statement (first in the list)
+        Ok(statements.into_iter().next())
     }
 
     pub async fn get_exchange_rates(&self) -> Result<Vec<ExchangeRate>, Box<dyn std::error::Error>> {
