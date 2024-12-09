@@ -56,7 +56,7 @@ async fn main() -> Result<()> {
 
 async fn export_details_eu_csv() -> Result<()> {
     let config = config::load_config()?;
-    let tickers = config.eu_tickers;
+    let tickers = config.non_us_tickers;
 
     // Create output directory if it doesn't exist
     let output_dir = PathBuf::from("output");
@@ -78,6 +78,7 @@ async fn export_details_eu_csv() -> Result<()> {
         "Active",
         "Description",
         "Homepage URL",
+        "Employees",
     ])?;
 
     for (i, ticker) in tickers.iter().enumerate() {
@@ -94,6 +95,7 @@ async fn export_details_eu_csv() -> Result<()> {
                     &details.active.map(|a| a.to_string()).unwrap_or_default(),
                     &details.description.unwrap_or_default(),
                     &details.homepage_url.unwrap_or_default(),
+                    &details.employees.unwrap_or_default(),
                 ])?;
                 println!("✅ Data written to CSV");
             }
@@ -110,6 +112,7 @@ async fn export_details_eu_csv() -> Result<()> {
                     "",
                     "",
                     &error_msg,
+                    "",
                     "",
                 ])?;
             }
@@ -147,6 +150,7 @@ async fn export_details_us_csv() -> Result<()> {
         "Active",
         "Description",
         "Homepage URL",
+        "Employees",
     ])?;
 
     for (i, ticker) in tickers.iter().enumerate() {
@@ -161,6 +165,7 @@ async fn export_details_us_csv() -> Result<()> {
                     &details.active.map(|a| a.to_string()).unwrap_or_default(),
                     &details.description.unwrap_or_default(),
                     &details.homepage_url.unwrap_or_default(),
+                    &details.employees.unwrap_or_default(),
                 ])?;
                 println!("✅ Data written to CSV");
             }
@@ -175,6 +180,7 @@ async fn export_details_us_csv() -> Result<()> {
                     "",
                     "",
                     &error_msg,
+                    "",
                     "",
                 ])?;
             }
@@ -214,7 +220,7 @@ async fn list_details_us() -> Result<()> {
 
 async fn list_details_eu() -> Result<()> {
     let config = config::load_config()?;
-    let tickers = config.eu_tickers;
+    let tickers = config.non_us_tickers;
 
     for (i, ticker) in tickers.iter().enumerate() {
         println!("\nFetching the marketcap for {} ({}/{}) ⌛️", ticker, i + 1, tickers.len());
@@ -236,7 +242,7 @@ async fn list_details_eu() -> Result<()> {
 
 async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> {
     let config = config::load_config()?;
-    let tickers = config.tickers;
+    let tickers = [config.non_us_tickers, config.us_tickers].concat();
     
     // First fetch exchange rates
     println!("Fetching current exchange rates...");
@@ -329,6 +335,7 @@ async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> 
         "Active",
         "Description",
         "Homepage URL",
+        "Employees",
     ])?;
 
     // Collect all results first
@@ -356,6 +363,7 @@ async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> 
                         details.active.map(|a| a.to_string()).unwrap_or_default(),
                         details.description.unwrap_or_default(),
                         details.homepage_url.unwrap_or_default(),
+                        details.employees.unwrap_or_default(),
                     ]
                 ));
                 println!("✅ Data collected");
@@ -375,6 +383,7 @@ async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> 
                         "".to_string(),
                         "".to_string(),
                         format!("Error: {}", e),
+                        "".to_string(),
                         "".to_string(),
                     ]
                 ));
@@ -468,16 +477,16 @@ async fn generate_market_heatmap() -> Result<()> {
     
     // Load tickers from config
     let config = config::load_config()?;
-    let eu_tickers = config.eu_tickers;
+    let non_us_tickers = config.non_us_tickers;
     let us_tickers = config.us_tickers;
 
-    println!("Fetching market data for {} companies...", eu_tickers.len() + us_tickers.len());
+    println!("Fetching market data for {} companies...", non_us_tickers.len() + us_tickers.len());
     
     let mut stocks = Vec::new();
     let eur_to_usd = 1.10; // Approximate conversion rate, you might want to fetch this dynamically
 
     // Process EU stocks
-    for ticker in eu_tickers.iter() {
+    for ticker in non_us_tickers.iter() {
         if let Ok(details) = fmp_client.get_details(ticker).await {
             if let Some(market_cap) = details.market_cap {
                 let market_cap_eur = if details.currency_name.unwrap_or_default() == "USD" {
@@ -488,6 +497,7 @@ async fn generate_market_heatmap() -> Result<()> {
                 stocks.push(viz::StockData {
                     symbol: details.ticker,
                     market_cap_eur,
+                    employees: details.employees.unwrap_or_default(),
                 });
             }
         }
@@ -502,6 +512,7 @@ async fn generate_market_heatmap() -> Result<()> {
                 stocks.push(viz::StockData {
                     symbol: details.ticker,
                     market_cap_eur,
+                    employees: details.employees.unwrap_or_default(),
                 });
             }
         }

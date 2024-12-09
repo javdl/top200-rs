@@ -1,5 +1,5 @@
-eu_tickers = [
-    "C.PA", # LVMH
+non_us_tickers = [
+    "MC.PA", # LVMH
     "ITX.MC", # Inditex
     "CDI.PA", # Dior
     "KER.PA", # Kering
@@ -47,9 +47,14 @@ eu_tickers = [
     "MUL.L", # Mulberry
     "VAN.BR", # Van de Velde
     "GWI2.DE", # Gerry Weber
+    "ATZ.TO", # Aritzia Inc.
+    "WOSG.L", # Watches of Switzerland
+    "MEKKO.HE", # Marimekko
+    "AEF.MI", # Aeffe
 ]
 
 us_tickers = [
+    "BIRK", # Birkenstock
     "DBI", # DSW -> Designer Brands Inc. (DBI)
     "NKE", # Nike
     "TJX", # TJX
@@ -60,105 +65,54 @@ us_tickers = [
     "M", # Macy's
     "RL", # Ralph Lauren
     "JWN", # Nordstrom
-    "PUM.DE", # PUMA
     "SKX", # Skechers
     "CRI", # Carter's
     "COLM", # Columbia Sportswear
     "FL", # Foot locker
     "DECK", # Deckers Outdoor
     "WWW", # Wolverine
-    "BOO.L", # Boohoo.Com
-    "FRAS.L", # Sports Direct -> Frasers Group
-]
-
-tickers = [
-    "MC.PA", # LVMH
-    "NKE", # Nike
-    "ITX.MC", # Inditex
-    "CDI.PA", # Dior
-    "KER.PA", # Kering
-    "RMS.PA", # Hermès
-    "TJX", # TJX
-    "CFR.SW", # Richemont
-    "ADS.DE", # adidas
-    "9983.T", # Fast Retailing
-    "EL.PA", # Luxottica
+    "LANV", # Lanvin Group (owns Wolford, Lanvin, St. John, Sergio Rossi, Caruso)
+    "BURL", # Burlington Stores
+    "ONON", # On Holding
+    "LEVI", # Levi Strauss & Co.
+    "CROX", # Crocs
+    "KTB", # Kontoor Brands
+    "VSCO", # Victoria's Secret
+    "ZGN", # Ermenegildo Zegna
+    "KSS", # KOHL'S
+    "FIGS", # FIGS
+    "GOOS", # Canada Goose
+    "DOCS", # Dr. Martens
+    "REAL", # The RealReal
+    "ZUMZ", # Zumiez Inc
+    "WEYS", # Weyco Group
+    "TDUP", # ThredUp
+    "RCKY", # Rocky Brands
+    "BIRD", # Allbirds
+    "RENT", # Rent the Runway
     "ROST", # Ross Stores
-    "VFC", # VF
-    "HM-B.ST", # H&M
-    "UHR.SW", # Swatch Group
-    "TPR", # Coach -> Tapestry
-    "ZAL.DE", # Zalando
     "GPS", # Gap
     "BBWI", # L Brands -> Bath & Body Works
-    "1929.HK", # Chow Tai Fook
     "PVH", # PVH HQ
-    "LULU", # Lululemon
-    "1913.HK", # Prada Group
     "VIPS", # Vipshop Holdings
-    "BRBY.L", # Burberry
-    "NXT.L", # Next
-    "CPRI", # Michael Kors -> Capri Holdings
-    "M", # Macy's
-    "MONC.MI", # Moncler
-    "RL", # Ralph Lauren
-    "JWN", # Nordstrom
-    "ASC.L", # ASOS
-    "LREN3.SA", # Lojas Renner
     "HBI", # Hanes
     "UA", # Under Armour
-    "PUM.DE", # PUMA
-    "MKS.L", # Marks & Spencer (M&S)
-    "SKX", # Skechers
-    "BOSS.DE", # Hugo Boss
-    "GIL.TO", # Gildan
-    "CRI", # Carter's
-    "COLM", # Columbia Sportswear
-    "JD.L", # JD Sports
-    "FL", # Foot locker
-    "SFER.MI", # Salvatore Ferragamo
-    "002563.SZ", # Semir
     "URBN", # Urban Outfitters
     "AEO", # American Eagle Outfitters
     "DKS", # Dick's Sporting Goods
-    "7936.T", # Asics
-    "DECK", # Deckers Outdoor
-    "600612.SS", # Lao Feng Xiang Jewelry
-    "WWW", # Wolverine
-    "BOO.L", # Boohoo.Com
-    "FRAS.L", # Sports Direct -> Frasers Group
     "SHOO", # Steve Madden
-    "GRND3.SA", # Grendene
-    "TOD.MI", # TOD'S
-    "ALPA4.SA", # Alpargatas - Havaianas
     "PLCE", # Children's Place
     "DDS", # Dillard's
-    "BC.MI", # Brunello Cucinelli
-    "2331.HK", # Li Ning
-    "SDRY.L", # Supergroup -> Superdry
     "GIII", # G-III Apparel Group
-    "ABFRL.NS", # Pantaloons
-    "DBI", # DSW -> Designer Brands Inc. (DBI)
-    "ARVIND.NS", # Arvind
-    "8016.T", # Onward Holdings
     "ANF", # Abercrombie & Fitch
     "OXM", # Oxford Industries
     "GES", # GUESS
-    "7606.T", # United Arrows
     "CAL", # Caleres
-    "CHS", # Chico's    "JCP", # J.C. Penney
-    "002269.SZ", # Metersbonwe
-    "SOMA3.SA", # Cia Hering -> Merged with Grupo Soma in 2021, now part of SOMA3.SA
+    "CHS", # Chico's
     "BKE", # Buckle
-    "3998.HK", # Bosideng
-    "GEO.MI", # GEOX
     "GCO", # Genesco
-    "0330.HK", # Esprit
-    "MUL.L", # Mulberry
     "FOSL", # Fossil
-    "VAN.BR", # Van de Velde
     "EXPR", # Express
-    "GWI2.DE", # Gerry Weber
     "VRA", # Vera Bradley
     "CATO" # Cato Fashion
 ]

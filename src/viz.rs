@@ -5,6 +5,7 @@ use plotters::prelude::*;
 pub struct StockData {
     pub symbol: String,
     pub market_cap_eur: f64,
+    pub employees: String,
 }
 
 struct Rectangle {

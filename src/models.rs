@@ -17,6 +17,7 @@ pub struct Details {
     pub homepage_url: Option<String>,
     #[serde(rename = "weighted_shares_outstanding")]
     pub weighted_shares_outstanding: Option<f64>,
+    pub employees: Option<String>,
     // Add catch-all for other fields we don't care about
     #[serde(flatten)]
     pub extra: std::collections::HashMap<String, Value>,
@@ -44,7 +45,7 @@ pub struct FMPCompanyProfile {
     #[serde(rename = "website", default)]
     pub website: String,
     #[serde(rename = "fullTimeEmployees")]
-    pub shares_outstanding: Option<String>,
+    pub employees: Option<String>,
     #[serde(rename = "price", default)]
     pub price: f64,
     pub currency: String,

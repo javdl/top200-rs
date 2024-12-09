@@ -4,9 +4,8 @@ use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    pub eu_tickers: Vec<String>,
+    pub non_us_tickers: Vec<String>,
     pub us_tickers: Vec<String>,
-    pub tickers: Vec<String>,
 }
 
 impl Default for Config {
@@ -18,16 +17,11 @@ impl Default for Config {
         
         // Fallback to hardcoded defaults
         Self {
-            eu_tickers: vec![
-                "ASML".to_string(), "LVMH.PA".to_string(), "NOVO-B.CO".to_string(),
+            non_us_tickers: vec![
+                "C.PA".to_string(), "LVMH.PA".to_string(), "ITX.MC".to_string(),
             ],
             us_tickers: vec![
                 "NKE".to_string(), "TJX".to_string(), "VFC".to_string(),
-            ],
-            tickers: vec![
-                "MC.PA".to_string(),     // LVMH (Paris)
-                "NKE".to_string(),       // Nike (NYSE)
-                "ITX.MC".to_string(),    // Inditex (Madrid)
             ],
         }
     }

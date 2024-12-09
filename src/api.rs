@@ -77,11 +77,6 @@ impl FMPClient {
             _ => &profile.currency,
         };
 
-        // Parse shares outstanding from string, handling Option
-        let shares_outstanding = profile.shares_outstanding.as_ref()
-            .map(|s| s.replace(',', "").parse::<f64>().unwrap_or(0.0))
-            .unwrap_or(0.0);
-
         Ok(Details {
             ticker: profile.symbol.clone(),
             market_cap: Some(profile.market_cap),
@@ -91,7 +86,8 @@ impl FMPClient {
             active: Some(profile.is_active),
             description: Some(profile.description.clone()),
             homepage_url: Some(profile.website.clone()),
-            weighted_shares_outstanding: Some(shares_outstanding),
+            weighted_shares_outstanding: None, // We don't have this data from FMP
+            employees: profile.employees.clone(),
             extra: std::collections::HashMap::new(),
         })
     }
