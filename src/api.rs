@@ -77,8 +77,10 @@ impl FMPClient {
             _ => &profile.currency,
         };
 
-        // Parse shares outstanding from string
-        let shares_outstanding = profile.shares_outstanding.replace(',', "").parse::<f64>().unwrap_or(0.0);
+        // Parse shares outstanding from string, handling Option
+        let shares_outstanding = profile.shares_outstanding.as_ref()
+            .map(|s| s.replace(',', "").parse::<f64>().unwrap_or(0.0))
+            .unwrap_or(0.0);
 
         Ok(Details {
             ticker: profile.symbol.clone(),

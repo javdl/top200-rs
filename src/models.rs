@@ -43,8 +43,8 @@ pub struct FMPCompanyProfile {
     pub description: String,
     #[serde(rename = "website", default)]
     pub website: String,
-    #[serde(rename = "fullTimeEmployees", default = "default_string")]
-    pub shares_outstanding: String,
+    #[serde(rename = "fullTimeEmployees")]
+    pub shares_outstanding: Option<String>,
     #[serde(rename = "price", default)]
     pub price: f64,
     pub currency: String,

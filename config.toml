@@ -34,7 +34,7 @@ eu_tickers = [
     "ALPA4.SA", # Alpargatas - Havaianas
     "BC.MI", # Brunello Cucinelli
     "2331.HK", # Li Ning
-    "SGP.L", # Supergroup
+    "SDRY.L", # Supergroup -> Superdry
     "ABFRL.NS", # Pantaloons
     "ARVIND.NS", # Arvind
     "8016.T", # Onward Holdings
@@ -135,7 +135,7 @@ tickers = [
     "DDS", # Dillard's
     "BC.MI", # Brunello Cucinelli
     "2331.HK", # Li Ning
-    "SGP.L", # Supergroup
+    "SDRY.L", # Supergroup -> Superdry
     "GIII", # G-III Apparel Group
     "ABFRL.NS", # Pantaloons
     "DBI", # DSW -> Designer Brands Inc. (DBI)
