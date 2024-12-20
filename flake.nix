@@ -5,9 +5,10 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     rust-overlay.url = "github:oxalica/rust-overlay";
     flake-utils.url = "github:numtide/flake-utils";
+    crane.url = "github:ipetkov/crane";
   };
 
-  outputs = { self, nixpkgs, rust-overlay, flake-utils, ... }:
+  outputs = { self, nixpkgs, rust-overlay, flake-utils, crane, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         overlays = [ (import rust-overlay) ];
@@ -20,21 +21,48 @@
           extensions = [ "rust-src" "rust-analyzer" "clippy" ];
         };
 
+        # this is how we can tell crane to use our toolchain!
+        craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
+        # cf. https://crane.dev/API.html#libcleancargosource
+        src = craneLib.cleanCargoSource ./.;
+        # as before
+        nativeBuildInputs = with pkgs; [ rustToolchain pkg-config ];
+        buildInputs = with pkgs; [ openssl sqlite ];
+        # because we'll use it for both `cargoArtifacts` and `bin`
+        commonArgs = {
+          inherit src buildInputs nativeBuildInputs;
+        };
+        cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+        # remember, `set1 // set2` does a shallow merge:
+        bin = craneLib.buildPackage (commonArgs // {
+          inherit cargoArtifacts;
+        });
       in
       {
+         packages =
+            {
+              # that way we can build `bin` specifically,
+              # but it's also the default.
+              inherit bin;
+              default = bin;
+            };
+
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            # Rust toolchain
-            rustToolchain
+          # instead of passing `buildInputs` / `nativeBuildInputs`,
+            # we refer to an existing derivation here
+            inputsFrom = [ bin ];
+          # buildInputs = with pkgs; [
+          #   # Rust toolchain
+          #   rustToolchain
 
-            # Additional dependencies
-            pkg-config
-            openssl
-            trunk
+          #   # Additional dependencies
+          #   pkg-config
+          #   openssl
+          #   trunk
 
-            # SQLite for database
-            sqlite
-          ];
+          #   # SQLite for database
+          #   sqlite
+          # ];
 
           # Environment variables
           shellHook = ''
