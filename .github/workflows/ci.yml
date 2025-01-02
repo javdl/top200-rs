@@ -305,7 +305,7 @@ jobs:
 
     - name: Extract wasm files
       run: |
-        tar -xf result/strand-*.tgz
+        tar -xf result/*-*.tgz
         mv package pkg
 
     - name: Set up Python 3.8
