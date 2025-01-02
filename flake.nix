@@ -27,7 +27,7 @@
         src = craneLib.cleanCargoSource ./.;
         # as before
         nativeBuildInputs = with pkgs; [ rustToolchain pkg-config ];
-        buildInputs = with pkgs; [ openssl sqlite ];
+        buildInputs = with pkgs; [ openssl sqlite fontconfig ];
         # because we'll use it for both `cargoArtifacts` and `bin`
         commonArgs = {
           inherit src buildInputs nativeBuildInputs;
