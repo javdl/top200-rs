@@ -32,19 +32,15 @@ fn worst_ratio(row: &[(f64, StockData)], width: f64) -> f64 {
     })
 }
 
-fn layout_row(
-    row: &[(f64, StockData)],
-    width: i32,
-    x: i32,
-    y: i32,
-) -> Vec<(Rectangle, StockData)> {
+fn layout_row(row: &[(f64, StockData)], width: i32, x: i32, y: i32) -> Vec<(Rectangle, StockData)> {
     let _total_area: f64 = row.iter().map(|(area, _)| *area).sum::<f64>();
     let height = (row.iter().map(|(area, _)| *area).sum::<f64>() / width as f64) as i32;
     let mut current_x = x;
     let mut result = Vec::new();
 
     for (area, stock) in row {
-        let rect_width = (*area / row.iter().map(|(area, _)| *area).sum::<f64>() * width as f64) as i32;
+        let rect_width =
+            (*area / row.iter().map(|(area, _)| *area).sum::<f64>() * width as f64) as i32;
         result.push((
             Rectangle {
                 x: current_x,
@@ -72,7 +68,7 @@ fn squarify(
 
     let _total_area: f64 = stocks.iter().map(|(area, _)| *area).sum::<f64>();
     let shortest_side = width.min(height) as f64;
-    
+
     let mut current_row = Vec::new();
     let mut i = 0;
     let mut current_ratio = f64::INFINITY;
@@ -85,7 +81,8 @@ fn squarify(
         let new_ratio = worst_ratio(&new_row, shortest_side);
 
         if !current_row.is_empty() && new_ratio > current_ratio {
-            let current_row_owned: Vec<(f64, StockData)> = current_row.iter().map(|(a, s)| (*a, s.clone())).collect();
+            let current_row_owned: Vec<(f64, StockData)> =
+                current_row.iter().map(|(a, s)| (*a, s.clone())).collect();
             let mut result = if width < height {
                 layout_row(&current_row_owned, width, x, y)
             } else {
@@ -128,7 +125,10 @@ fn squarify(
             };
 
             result.extend(squarify(
-                &stocks[i..].iter().map(|(a, s)| (*a, s.clone())).collect::<Vec<_>>(),
+                &stocks[i..]
+                    .iter()
+                    .map(|(a, s)| (*a, s.clone()))
+                    .collect::<Vec<_>>(),
                 remaining_width,
                 remaining_height,
                 remaining_x,
@@ -142,7 +142,8 @@ fn squarify(
         i += 1;
     }
 
-    let current_row_owned: Vec<(f64, StockData)> = current_row.iter().map(|(a, s)| (*a, s.clone())).collect();
+    let current_row_owned: Vec<(f64, StockData)> =
+        current_row.iter().map(|(a, s)| (*a, s.clone())).collect();
     if width < height {
         layout_row(&current_row_owned, width, x, y)
     } else {
@@ -163,16 +164,12 @@ fn squarify(
     }
 }
 
-pub fn create_market_heatmap(
-    stocks: Vec<StockData>,
-    output_path: &str,
-) -> Result<()> {
+pub fn create_market_heatmap(stocks: Vec<StockData>, output_path: &str) -> Result<()> {
     let width = 1200i32;
     let height = 1200i32;
-    
-    let root = BitMapBackend::new(output_path, (width as u32, height as u32))
-        .into_drawing_area();
-    
+
+    let root = BitMapBackend::new(output_path, (width as u32, height as u32)).into_drawing_area();
+
     root.fill(&WHITE)?;
 
     // Draw title
@@ -206,8 +203,8 @@ pub fn create_market_heatmap(
         &normalized_stocks,
         usable_width,
         usable_height,
-        50,  // x margin
-        80,  // y margin (larger to account for title)
+        50, // x margin
+        80, // y margin (larger to account for title)
     );
 
     // Draw rectangles
@@ -217,19 +214,25 @@ pub fn create_market_heatmap(
         let color = RGBColor(
             (100.0 * (1.0 - relative_market_cap as f32)) as u8,
             (200.0 * relative_market_cap as f32) as u8,
-            100
+            100,
         );
 
         // Draw filled rectangle
         let rect_elem = plotters::element::Rectangle::new(
-            [(rect.x, rect.y), (rect.x + rect.width, rect.y + rect.height)],
+            [
+                (rect.x, rect.y),
+                (rect.x + rect.width, rect.y + rect.height),
+            ],
             color.filled(),
         );
         root.draw(&rect_elem)?;
 
         // Draw border
         let border = plotters::element::Rectangle::new(
-            [(rect.x, rect.y), (rect.x + rect.width, rect.y + rect.height)],
+            [
+                (rect.x, rect.y),
+                (rect.x + rect.width, rect.y + rect.height),
+            ],
             Into::<ShapeStyle>::into(&BLACK).stroke_width(1),
         );
         root.draw(&border)?;
@@ -242,16 +245,12 @@ pub fn create_market_heatmap(
         // Draw text if rectangle is large enough
         if min_dimension > 40 {
             // Draw symbol
-            root.draw_text(
-                &stock.symbol,
-                &text_style,
-                (rect.x + 5, rect.y + font_size),
-            )?;
+            root.draw_text(&stock.symbol, &text_style, (rect.x + 5, rect.y + font_size))?;
 
             // Format market cap in billions
             let market_cap_b = stock.market_cap_eur / 1_000_000_000.0;
             let market_cap_text = format!("€{:.1}B", market_cap_b);
-            
+
             // Draw market cap if there's enough vertical space
             if rect.height > font_size * 3 {
                 root.draw_text(

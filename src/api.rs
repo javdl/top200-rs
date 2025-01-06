@@ -3,14 +3,14 @@ use chrono::NaiveDate;
 use reqwest::Client;
 use serde::Deserialize;
 use serde_json::{self, Value};
-use std::{env, time::Duration};
-use tokio::time::sleep;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::{env, time::Duration};
 use tokio::sync::Semaphore;
+use tokio::time::sleep;
 
-use crate::models::{Details, PolygonResponse, FMPCompanyProfile, FMPRatios, FMPIncomeStatement};
 use crate::convert_currency;
+use crate::models::{Details, FMPCompanyProfile, FMPIncomeStatement, FMPRatios, PolygonResponse};
 
 pub struct PolygonClient {
     client: Client,
@@ -27,7 +27,7 @@ impl FMPClient {
     pub fn new(api_key: String) -> Self {
         // Reduce concurrent requests to 100 to stay well within the rate limit
         let rate_limiter = Arc::new(Semaphore::new(100));
-        
+
         Self {
             client: Client::new(),
             api_key,
@@ -52,14 +52,24 @@ impl FMPClient {
                 .context("Failed to send request")?;
 
             // Get the response text first to log in case of error
-            let text = response.text().await.context("Failed to get response text")?;
-            
+            let text = response
+                .text()
+                .await
+                .context("Failed to get response text")?;
+
             // Check for rate limit error
             if text.contains("Limit Reach") {
                 if retries >= max_retries {
-                    return Err(anyhow::anyhow!("Rate limit reached after {} retries", max_retries));
+                    return Err(anyhow::anyhow!(
+                        "Rate limit reached after {} retries",
+                        max_retries
+                    ));
                 }
-                eprintln!("Rate limit hit for {}. Retrying in {} seconds...", url, delay.as_secs());
+                eprintln!(
+                    "Rate limit hit for {}. Retrying in {} seconds...",
+                    url,
+                    delay.as_secs()
+                );
                 sleep(delay).await;
                 delay *= 2; // Exponential backoff
                 retries += 1;
@@ -85,7 +95,11 @@ impl FMPClient {
         }
     }
 
-    pub async fn get_details(&self, ticker: &str, rate_map: &HashMap<String, f64>) -> Result<Details> {
+    pub async fn get_details(
+        &self,
+        ticker: &str,
+        rate_map: &HashMap<String, f64>,
+    ) -> Result<Details> {
         if ticker.is_empty() {
             anyhow::bail!("ticker empty");
         }
@@ -93,18 +107,15 @@ impl FMPClient {
         // Prepare URLs for all three requests
         let profile_url = format!(
             "https://financialmodelingprep.com/api/v3/profile/{}?apikey={}",
-            ticker,
-            self.api_key
+            ticker, self.api_key
         );
         let ratios_url = format!(
             "https://financialmodelingprep.com/api/v3/ratios/{}?apikey={}",
-            ticker,
-            self.api_key
+            ticker, self.api_key
         );
         let income_url = format!(
             "https://financialmodelingprep.com/api/v3/income-statement/{}?limit=1&apikey={}",
-            ticker,
-            self.api_key
+            ticker, self.api_key
         );
 
         // Make all three requests in parallel
@@ -148,8 +159,17 @@ impl FMPClient {
             roe: ratios.as_ref().and_then(|r| r.return_on_equity),
             extra: {
                 let mut map = std::collections::HashMap::new();
-                map.insert("exchange".to_string(), Value::String(profile.exchange.clone()));
-                map.insert("price".to_string(), Value::Number(serde_json::Number::from_f64(profile.price).unwrap_or(serde_json::Number::from(0))));
+                map.insert(
+                    "exchange".to_string(),
+                    Value::String(profile.exchange.clone()),
+                );
+                map.insert(
+                    "price".to_string(),
+                    Value::Number(
+                        serde_json::Number::from_f64(profile.price)
+                            .unwrap_or(serde_json::Number::from(0)),
+                    ),
+                );
                 map
             },
         };
@@ -169,8 +189,7 @@ impl FMPClient {
 
         let url = format!(
             "https://financialmodelingprep.com/api/v3/ratios/{}?apikey={}",
-            ticker,
-            self.api_key
+            ticker, self.api_key
         );
 
         let response = self
@@ -181,14 +200,17 @@ impl FMPClient {
             .context("Failed to send request")?;
 
         let status = response.status();
-        let text = response.text().await.context("Failed to get response text")?;
+        let text = response
+            .text()
+            .await
+            .context("Failed to get response text")?;
 
         if !status.is_success() {
             anyhow::bail!("API request failed: {}", text);
         }
 
-        let ratios: Vec<FMPRatios> = serde_json::from_str(&text)
-            .context("Failed to parse FMP ratios response")?;
+        let ratios: Vec<FMPRatios> =
+            serde_json::from_str(&text).context("Failed to parse FMP ratios response")?;
 
         // Get the most recent ratios (first in the list)
         Ok(ratios.into_iter().next())
@@ -201,8 +223,7 @@ impl FMPClient {
 
         let url = format!(
             "https://financialmodelingprep.com/api/v3/income-statement/{}?limit=1&apikey={}",
-            ticker,
-            self.api_key
+            ticker, self.api_key
         );
 
         let response = self
@@ -213,27 +234,32 @@ impl FMPClient {
             .context("Failed to send request")?;
 
         let status = response.status();
-        let text = response.text().await.context("Failed to get response text")?;
+        let text = response
+            .text()
+            .await
+            .context("Failed to get response text")?;
 
         if !status.is_success() {
             anyhow::bail!("API request failed: {}", text);
         }
 
-        let statements: Vec<FMPIncomeStatement> = serde_json::from_str(&text)
-            .context("Failed to parse FMP income statement response")?;
+        let statements: Vec<FMPIncomeStatement> =
+            serde_json::from_str(&text).context("Failed to parse FMP income statement response")?;
 
         // Get the most recent statement (first in the list)
         Ok(statements.into_iter().next())
     }
 
-    pub async fn get_exchange_rates(&self) -> Result<Vec<ExchangeRate>, Box<dyn std::error::Error>> {
+    pub async fn get_exchange_rates(
+        &self,
+    ) -> Result<Vec<ExchangeRate>, Box<dyn std::error::Error>> {
         let url = format!(
             "https://financialmodelingprep.com/api/v3/quotes/forex?apikey={}",
             self.api_key
         );
 
         let response = self.client.get(&url).send().await?;
-        
+
         if !response.status().is_success() {
             return Err(format!("API request failed with status: {}", response.status()).into());
         }
@@ -271,7 +297,10 @@ impl PolygonClient {
             .context("Failed to send request")?;
 
         let status = response.status();
-        let text = response.text().await.context("Failed to get response text")?;
+        let text = response
+            .text()
+            .await
+            .context("Failed to get response text")?;
 
         if !status.is_success() {
             anyhow::bail!("API error: {} - {}", status, text);
@@ -290,7 +319,8 @@ impl PolygonClient {
 }
 
 pub async fn get_details_eu(ticker: &str, rate_map: &HashMap<String, f64>) -> Result<Details> {
-    let api_key = env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set");
+    let api_key = env::var("FINANCIALMODELINGPREP_API_KEY")
+        .expect("FINANCIALMODELINGPREP_API_KEY must be set");
     let client = FMPClient::new(api_key);
     client.get_details(ticker, rate_map).await
 }

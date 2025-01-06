@@ -14,15 +14,15 @@ impl Default for Config {
         if let Ok(config) = load_config() {
             return config;
         }
-        
+
         // Fallback to hardcoded defaults
         Self {
             non_us_tickers: vec![
-                "C.PA".to_string(), "LVMH.PA".to_string(), "ITX.MC".to_string(),
+                "C.PA".to_string(),
+                "LVMH.PA".to_string(),
+                "ITX.MC".to_string(),
             ],
-            us_tickers: vec![
-                "NKE".to_string(), "TJX".to_string(), "VFC".to_string(),
-            ],
+            us_tickers: vec!["NKE".to_string(), "TJX".to_string(), "VFC".to_string()],
         }
     }
 }
