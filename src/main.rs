@@ -8,7 +8,7 @@ use anyhow::Result;
 use chrono::{Local, NaiveDate};
 use clap::{Parser, Subcommand};
 use csv::Writer;
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use glob::glob;
 use std::{collections::HashMap, env, path::{Path, PathBuf}, sync::Arc};
 

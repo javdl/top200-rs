@@ -17,30 +17,21 @@ targets = [
 # More documentation for the advisories section can be found here:
 # https://embarkstudios.github.io/cargo-deny/checks/advisories/cfg.html
 [advisories]
-# The path where the advisory database is cloned/fetched into
+version = 2
 db-path = "~/.cargo/advisory-db"
-# The url(s) of the advisory databases to use
 db-urls = ["https://github.com/rustsec/advisory-db"]
+git-fetch-with-cli = true
+disable-yank-checking = false
+maximum-db-staleness = "P7D"
 
-# Advisory-related configuration
-[advisories.severity]
-vulnerability = "deny"
-unmaintained = "warn"
-yanked = "warn"
-notice = "warn"
-
-# A list of advisory IDs to ignore. Note that ignored advisories will still
-# output a note when they are encountered.
-ignore = [
-]
+# A list of advisory IDs to ignore
+ignore = []
 
 # This section is considered when running `cargo deny check licenses`
 # More documentation for the licenses section can be found here:
 # https://embarkstudios.github.io/cargo-deny/checks/licenses/cfg.html
 [licenses]
-unlicensed = "deny"
-copyleft = "deny"
-default = "deny"
+# Confidence threshold for license detection (0.0 to 1.0)
 confidence-threshold = 0.8
 
 # List of explicitly allowed licenses
@@ -49,36 +40,35 @@ allow = [
     "Apache-2.0",
     "Apache-2.0 WITH LLVM-exception",
     "BSL-1.0",
-    # @edulix: The followinglicenses are disabled just to remove the warning
-    # that no dependency is being detected to use it, but it's a license we are
-    # legally compatible with:
-    # "CC0-1.0",
-    # "LGPL-3.0", 
     "BSD-3-Clause",
-    "Unicode-DFS-2016"
-]
-
-# List of explicitly disallowed licenses
-deny = [
-    #"Nokia",
+    "Unicode-DFS-2016",
+    "MPL-2.0",
+    "Unicode-3.0",
+    "ISC"
 ]
 
 [licenses.private]
 ignore = false
-registries = [
-    #"https://sekretz.com/registry
-]
+registries = []
 
 # Allow 1 or more licenses on a per-crate basis
-exceptions = [
-    # @edulix: Actually these two packages are alternatively licensed, so even 
-    # if cargo deny detects them as GPL AND LGPL, it's GPL OR LGPL. And we allow
-    # LGPL. That's why they are added here as exceptions.
-    { allow = ["GPL-3.0", "LGPL-3.0"], name = "rug", version = "*" },
-    { allow = ["GPL-3.0", "LGPL-3.0"], name = "gmp-mpfr-sys", version = "*" },
-    # This is our own package, so we don't mind its license :-)
-    { allow = ["AGPL-3.0"], name = "strand" }
-]
+[[licenses.clarify]]
+name = "rug"
+version = "*"
+expression = "GPL-3.0 OR LGPL-3.0"
+license-files = []
+
+[[licenses.clarify]]
+name = "gmp-mpfr-sys"
+version = "*"
+expression = "GPL-3.0 OR LGPL-3.0"
+license-files = []
+
+[[licenses.clarify]]
+name = "strand"
+version = "*"
+expression = "AGPL-3.0"
+license-files = []
 
 # This section is considered when running `cargo deny check bans`.
 [bans]
