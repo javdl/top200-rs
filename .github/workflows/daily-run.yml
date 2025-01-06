@@ -1,0 +1,40 @@
+name: Daily Data Collection
+
+on:
+  schedule:
+    # Run at 00:00 UTC every day
+    - cron: '0 0 * * *'
+  # Allow manual trigger
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  # Add your environment variables here
+  FINANCIALMODELINGPREP_API_KEY: ${{ secrets.FINANCIALMODELINGPREP_API_KEY }}
+  POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+
+jobs:
+  collect-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Run data collection
+        run: ./target/release/top200-rs export-combined
+
+      - name: Upload CSV artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-data-${{ github.run_number }}
+          path: |
+            *.csv
+          retention-days: 90

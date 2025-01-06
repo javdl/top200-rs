@@ -1,8 +1,14 @@
 # top200-rs
 
 ## TODO
-- edit so I can run $ cargo run -- export-details-combined
+
 - add a command so I can test with just a few tickers
+
+## License
+
+```sh
+reuse annotate --copyright="Joost van der Laan <joost@fashionunited.com>" --license="AGPL-3.0-only" --skip-unrecognised src/*  
+```
 
 ## Changelog
 
@@ -132,8 +138,6 @@ Tokyo Stock Exchange: .T
 Hong Kong: .HK
 European exchanges generally need country codes
 
-
-
 Here's the converted list:
 MC.PA # LVMH
 NKE # Nike
@@ -232,7 +236,6 @@ VRA # Vera Bradley
 CATO # Cato Fashion
 FRAN # Francesca's
 
-
 Here's a list of just the US stocks, formatted for Polygon API. For Polygon, we can use just the ticker symbol without any exchange prefix:
 TJX # TJX
 ROST # Ross Stores
@@ -279,8 +282,6 @@ VRA # Vera Bradley
 CATO # Cato Fashion
 FRAN # Francesca's
 Note: Since this list appears to be from a past date, some of these tickers might have changed or companies might have been delisted. It would be good practice to verify the current status of each ticker before using them with the Polygon API.
-
-
 
 Here's the list of non-US stocks formatted for FinancialModelingPrep API:
 MC.PA # LVMH
