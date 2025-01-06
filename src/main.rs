@@ -5,11 +5,13 @@ mod viz;
 mod config;
 mod utils;
 
-use std::{collections::HashMap, env, path::PathBuf, time::Duration};
+use std::{collections::HashMap, env, path::PathBuf, sync::Arc, time::Duration};
 use anyhow::Result;
 use chrono::{Local, NaiveDate};
 use csv::Writer;
 use dotenv::dotenv;
+use futures::future::join_all;
+use indicatif::ProgressBar;
 use tokio;
 
 pub use utils::convert_currency;
@@ -25,7 +27,8 @@ async fn main() -> Result<()> {
         "List EU stock marketcaps".to_string(),
         "Export US stock marketcaps to CSV".to_string(),
         "Export EU stock marketcaps to CSV".to_string(),
-        "Generate Market Heatmap".to_string(),
+        "Generate Market Heatmap from latest top 100".to_string(),
+        "Output top 100 active tickers".to_string(),
         "Exit".to_string(),
     ];
 
@@ -47,7 +50,8 @@ async fn main() -> Result<()> {
             "List EU stock marketcaps" => list_details_eu().await?,
             "Export US stock marketcaps to CSV" => export_details_us_csv().await?,
             "Export EU stock marketcaps to CSV" => export_details_eu_csv().await?,
-            "Generate Market Heatmap" => export_details_combined_csv(&api::FMPClient::new(env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set"))).await?,
+            "Generate Market Heatmap from latest top 100" => generate_heatmap_from_latest()?,
+            "Output top 100 active tickers" => output_top_100_active()?,
             "Exit" => println!("Exiting..."),
             _ => unreachable!(),
         },
@@ -338,60 +342,6 @@ async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> 
         rate_map.insert(rate.name.clone(), rate.price);
     }
 
-    // Helper function to convert currency symbol to code and get divisor
-    let currency_to_code = |currency: &str| -> (String, f64) {
-        match currency {
-            "€" => ("EUR".to_string(), 1.0),
-            "$" => ("USD".to_string(), 1.0),
-            "£" => ("GBP".to_string(), 1.0),
-            "¥" => ("JPY".to_string(), 1.0),
-            "₣" => ("CHF".to_string(), 1.0),
-            "kr" => ("SEK".to_string(), 1.0),
-            "GBp" => ("GBP".to_string(), 100.0),  // Convert pence to pounds
-            "GBX" => ("GBP".to_string(), 100.0),  // Alternative notation for pence
-            _ => (currency.to_string(), 1.0)
-        }
-    };
-
-    // Helper function to convert amount from source currency to target currency
-    let convert_currency = |amount: f64, from_currency: &str, to_currency: &str| -> f64 {
-        let (from_code, from_divisor) = currency_to_code(from_currency);
-        let amount = amount / from_divisor; // Convert to main currency unit if needed
-        
-        if from_code == to_currency {
-            amount
-        } else {
-            // First try direct conversion
-            let pair = format!("{}/{}", from_code, to_currency);
-            if let Some(&rate) = rate_map.get(&pair) {
-                amount * rate
-            } else {
-                // Try inverse conversion
-                let inverse_pair = format!("{}/{}", to_currency, from_code);
-                if let Some(&rate) = rate_map.get(&inverse_pair) {
-                    amount / rate
-                } else {
-                    // If no direct conversion exists, try through USD
-                    let to_usd = format!("{}/USD", from_code);
-                    let usd_to_target = rate_map.get(&format!("USD/{}", to_currency)).copied().unwrap_or_else(|| {
-                        if to_currency == "EUR" {
-                            0.92 // Fallback USD to EUR
-                        } else {
-                            1.0 // Fallback for USD
-                        }
-                    });
-                    
-                    if let Some(&rate) = rate_map.get(&to_usd) {
-                        amount * rate * usd_to_target
-                    } else {
-                        println!("⚠️  Warning: No conversion rate found for {} to {}", from_currency, to_currency);
-                        amount // Return unconverted amount as fallback
-                    }
-                }
-            }
-        }
-    };
-
     // Convert exchange prefixes to FMP format
     let timestamp = Local::now().format("%Y%m%d_%H%M%S");
     let filename = format!("output/combined_marketcaps_{}.csv", timestamp);
@@ -420,112 +370,143 @@ async fn export_details_combined_csv(fmp_client: &api::FMPClient) -> Result<()> 
         "P/E Ratio",
         "D/E Ratio",
         "ROE",
+        "Timestamp",
     ])?;
 
-    // Collect all results first
-    let mut results = Vec::new();
-    for ticker in tickers {
-        println!("Fetching data for {}", ticker);
-        match fmp_client.get_details(&ticker, &rate_map).await {
-            Ok(details) => {
-                let original_market_cap = details.market_cap.unwrap_or(0.0);
-                let currency = details.currency_symbol.clone().unwrap_or_default();
-                let eur_market_cap = convert_currency(original_market_cap, &currency, "EUR");
-                let usd_market_cap = convert_currency(original_market_cap, &currency, "USD");
-                
-                results.push((
-                    eur_market_cap,
-                    vec![
-                        details.ticker,
-                        details.name.unwrap_or_default(),
-                        original_market_cap.round().to_string(),
-                        currency,
-                        eur_market_cap.round().to_string(),
-                        usd_market_cap.round().to_string(),
-                        details.extra.get("exchange").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                        details.extra.get("price").map(|v| v.to_string()).unwrap_or_default(),
-                        details.active.map(|a| a.to_string()).unwrap_or_default(),
-                        details.description.unwrap_or_default(),
-                        details.homepage_url.unwrap_or_default(),
-                        details.employees.unwrap_or_default(),
-                        details.revenue.map(|r| r.to_string()).unwrap_or_default(),
-                        details.revenue_usd.map(|r| r.to_string()).unwrap_or_default(),
-                        details.working_capital_ratio.map(|r| r.to_string()).unwrap_or_default(),
-                        details.quick_ratio.map(|r| r.to_string()).unwrap_or_default(),
-                        details.eps.map(|r| r.to_string()).unwrap_or_default(),
-                        details.pe_ratio.map(|r| r.to_string()).unwrap_or_default(),
-                        details.debt_equity_ratio.map(|r| r.to_string()).unwrap_or_default(),
-                        details.roe.map(|r| r.to_string()).unwrap_or_default(),
-                    ]
-                ));
-                println!("✅ Data collected");
-            }
-            Err(e) => {
-                eprintln!("Error fetching data for {}: {}", ticker, e);
-                results.push((
-                    0.0,
-                    vec![
-                        ticker.to_string(),
-                        "ERROR".to_string(),
-                        "0".to_string(),
-                        "".to_string(),
-                        "0".to_string(),
-                        "0".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                        format!("Error: {}", e),
-                        "".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                        "".to_string(),
-                    ]
-                ));
-            }
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-
-    // Sort by EUR market cap (highest to lowest)
-    results.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
-
-    // Write sorted results to CSV
-    for (_, record) in &results {  
-        writer.write_record(&*record)?;  // Dereference to get &[String]
-    }
-
-    println!("📝 CSV file created: {}", filename);
-    println!("💶 Results are sorted by market cap in EUR (highest to lowest)");
-
-    // Generate heatmap
-    println!("\nGenerating market heatmap...");
-    let heatmap_filename = format!("output/heatmap_{}.png", timestamp);
-    generate_market_heatmap(&results, &heatmap_filename)?;
-    println!("🎨 Heatmap generated: {}", heatmap_filename);
-
-    Ok(())
-}
-
-fn generate_market_heatmap(results: &[(f64, Vec<String>)], output_path: &str) -> Result<()> {
-    let mut stocks = Vec::new();
+    // Create a rate_map Arc for sharing between tasks
+    let rate_map = Arc::new(rate_map);
+    let total_tickers = tickers.len();
     
-    // Only take the first 100 results since they're already sorted by market cap
-    for (market_cap, data) in results.iter().take(100) {
-        if *market_cap > 0.0 {  // Skip error entries
-            stocks.push((*market_cap, viz::StockData {
-                symbol: data[0].clone(),
-                market_cap_eur: *market_cap,
-                employees: data[11].clone(),  
-            }));
-        }
+    // Process tickers in parallel with progress tracking
+    let mut results = Vec::new();
+    let progress = indicatif::ProgressBar::new(total_tickers as u64);
+    progress.set_style(
+        indicatif::ProgressStyle::default_bar()
+            .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+            .unwrap()
+            .progress_chars("=>-"),
+    );
+
+    // Create chunks of tickers to process in parallel
+    // Process 50 tickers at a time to stay well within rate limits
+    for chunk in tickers.chunks(50) {
+        let chunk_futures = chunk.iter().map(|ticker| {
+            let rate_map = rate_map.clone();
+            let ticker = ticker.to_string();
+            let progress = progress.clone();
+            
+            async move {
+                let result = match fmp_client.get_details(&ticker, &rate_map).await {
+                    Ok(details) => {
+                        let original_market_cap = details.market_cap.unwrap_or(0.0);
+                        let currency = details.currency_symbol.clone().unwrap_or_default();
+                        let eur_market_cap = crate::utils::convert_currency(original_market_cap, &currency, "EUR", &rate_map);
+                        let usd_market_cap = crate::utils::convert_currency(original_market_cap, &currency, "USD", &rate_map);
+                        
+                        Some((
+                            eur_market_cap,
+                            vec![
+                                details.ticker,
+                                details.name.unwrap_or_default(),
+                                original_market_cap.round().to_string(),
+                                currency,
+                                eur_market_cap.round().to_string(),
+                                usd_market_cap.round().to_string(),
+                                details.extra.get("exchange").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                details.extra.get("price").map(|v| v.to_string()).unwrap_or_default(),
+                                details.active.map(|a| a.to_string()).unwrap_or_default(),
+                                details.description.unwrap_or_default(),
+                                details.homepage_url.unwrap_or_default(),
+                                details.employees.unwrap_or_default(),
+                                details.revenue.map(|r| r.to_string()).unwrap_or_default(),
+                                details.revenue_usd.map(|r| r.to_string()).unwrap_or_default(),
+                                details.working_capital_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                                details.quick_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                                details.eps.map(|r| r.to_string()).unwrap_or_default(),
+                                details.pe_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                                details.debt_equity_ratio.map(|r| r.to_string()).unwrap_or_default(),
+                                details.roe.map(|r| r.to_string()).unwrap_or_default(),
+                                details.timestamp.unwrap_or_default(),
+                            ]
+                        ))
+                    }
+                    Err(e) => {
+                        eprintln!("Error fetching data for {}: {}", ticker, e);
+                        None
+                    }
+                };
+                progress.inc(1);
+                result
+            }
+        });
+
+        // Wait for the current chunk to complete
+        let chunk_results: Vec<_> = futures::future::join_all(chunk_futures).await;
+        results.extend(chunk_results.into_iter().flatten());
     }
 
-    println!("📊 Generating heatmap with top {} companies", stocks.len());
-    viz::create_market_heatmap(stocks.into_iter().map(|(_, data)| data).collect(), output_path)?;
+    progress.finish_with_message("Data collection complete");
+
+    // Sort by market cap (EUR)
+    results.sort_by(|(a_cap, _): &(f64, Vec<String>), (b_cap, _)| {
+        b_cap.partial_cmp(a_cap).unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    // Write all results
+    for (_, record) in &results {
+        writer.write_record(record)?;
+    }
+    writer.flush()?;
+    println!("✅ Combined market caps written to: {}", filename);
+
+    // Filter active tickers and get top 100
+    let top_100_results: Vec<(f64, Vec<String>)> = results.iter()
+        .filter(|(_, record)| record[8] == "true") // Active column
+        .take(100)
+        .map(|(cap, record)| (*cap, record.clone()))
+        .collect();
+
+    // Generate top 100 CSV
+    let top_100_filename = format!("output/top_100_active_{}.csv", timestamp);
+    let top_100_file = std::fs::File::create(&top_100_filename)?;
+    let mut top_100_writer = csv::Writer::from_writer(top_100_file);
+
+    // Write headers
+    top_100_writer.write_record(&[
+        "Ticker",
+        "Name",
+        "Market Cap (Original)",
+        "Original Currency",
+        "Market Cap (EUR)",
+        "Market Cap (USD)",
+        "Exchange",
+        "Price",
+        "Active",
+        "Description",
+        "Homepage URL",
+        "Employees",
+        "Revenue",
+        "Revenue (USD)",
+        "Working Capital Ratio",
+        "Quick Ratio",
+        "EPS",
+        "P/E Ratio",
+        "D/E Ratio",
+        "ROE",
+        "Timestamp",
+    ])?;
+
+    // Write top 100 records
+    for (_, record) in &top_100_results {
+        top_100_writer.write_record(record)?;
+    }
+    top_100_writer.flush()?;
+    println!("✅ Top 100 active tickers written to: {}", top_100_filename);
+
+    // Generate market heatmap from top 100
+    generate_market_heatmap(&top_100_results, "output/market_heatmap.png")?;
+    println!("✅ Market heatmap generated from top 100 active tickers");
+
     Ok(())
 }
 
@@ -714,6 +695,18 @@ async fn export_marketcap_to_json(tickers: Vec<String>, output_path: &str) -> Re
     Ok(())
 }
 
+fn generate_market_heatmap(results: &[(f64, Vec<String>)], output_path: &str) -> Result<()> {
+    let stocks: Vec<viz::StockData> = results.iter().map(|(market_cap, record)| {
+        viz::StockData {
+            symbol: record[0].clone(),  // Ticker is at index 0
+            market_cap_eur: *market_cap,
+            employees: record[11].clone(),  // Employees is at index 11
+        }
+    }).collect();
+
+    viz::create_market_heatmap(stocks, output_path)
+}
+
 fn get_rate_map() -> HashMap<String, f64> {
     let mut rate_map = HashMap::new();
     
@@ -729,7 +722,146 @@ fn get_rate_map() -> HashMap<String, f64> {
     rate_map.insert("CNY/USD".to_string(), 0.139);
     rate_map.insert("BRL/USD".to_string(), 0.203);
     rate_map.insert("CAD/USD".to_string(), 0.737);
-    rate_map.insert("ILS/USD".to_string(), 0.27);  // Adding Israeli Shekel rate
+    rate_map.insert("ILS/USD".to_string(), 0.27);  // Israeli Shekel rate
+    rate_map.insert("ZAR/USD".to_string(), 0.053); // South African Rand rate
+
+    // Add reverse rates (USD to currency)
+    let mut pairs_to_add = Vec::new();
+    for (pair, &rate) in rate_map.clone().iter() {
+        if let Some((from, to)) = pair.split_once('/') {
+            pairs_to_add.push((format!("{}/{}", to, from), 1.0 / rate));
+        }
+    }
+    
+    // Add cross rates (currency to currency)
+    let base_pairs: Vec<_> = rate_map.clone().into_iter().collect();
+    for (pair1, rate1) in &base_pairs {
+        if let Some((from1, "USD")) = pair1.split_once('/') {
+            for (pair2, rate2) in &base_pairs {
+                if let Some(("USD", to2)) = pair2.split_once('/') {
+                    if from1 != to2 {
+                        // Calculate cross rate: from1/to2 = (from1/USD) * (USD/to2)
+                        pairs_to_add.push((format!("{}/{}", from1, to2), rate1 * rate2));
+                    }
+                }
+            }
+        }
+    }
+
+    // Add all the new pairs
+    for (pair, rate) in pairs_to_add {
+        rate_map.insert(pair, rate);
+    }
+    
+    // Debug print
+    println!("Available rates:");
+    for (pair, rate) in &rate_map {
+        println!("{}: {}", pair, rate);
+    }
     
     rate_map
+}
+
+/// Find the latest file in the output directory that matches a pattern
+fn find_latest_file(pattern: &str) -> Result<std::path::PathBuf> {
+    use std::fs;
+
+    let entries = fs::read_dir("output")?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry.path()
+                .to_str()
+                .map(|s| s.contains(pattern))
+                .unwrap_or(false)
+        })
+        .collect::<Vec<_>>();
+
+    let latest_file = entries
+        .iter()
+        .max_by_key(|entry| entry.metadata().unwrap().modified().unwrap())
+        .ok_or_else(|| anyhow::anyhow!("No files matching '{}' found in output directory", pattern))?;
+
+    Ok(latest_file.path())
+}
+
+/// Read CSV file and return records with market cap in EUR
+fn read_csv_with_market_cap(file_path: &std::path::Path) -> Result<Vec<(f64, Vec<String>)>> {
+    let mut rdr = csv::Reader::from_path(file_path)?;
+    let mut results = Vec::new();
+
+    for record in rdr.records() {
+        let record = record?;
+        if let Ok(market_cap) = record[4].parse::<f64>() { // Market Cap (EUR) is at index 4
+            results.push((
+                market_cap,
+                record.iter().map(|s| s.to_string()).collect()
+            ));
+        }
+    }
+
+    Ok(results)
+}
+
+/// Generate a heatmap from the latest top 100 active tickers CSV file
+fn generate_heatmap_from_latest() -> Result<()> {
+    let latest_file = find_latest_file("top_100_active_")?;
+    println!("Reading from latest file: {:?}", latest_file);
+
+    let results = read_csv_with_market_cap(&latest_file)?;
+
+    // Generate the heatmap
+    generate_market_heatmap(&results, "output/market_heatmap.png")?;
+    println!("✅ Market heatmap generated from latest top 100 active tickers");
+
+    Ok(())
+}
+
+/// Output the top 100 active tickers from the latest combined marketcaps CSV file
+pub fn output_top_100_active() -> Result<()> {
+    let latest_file = find_latest_file("combined_marketcaps_")?;
+    println!("Reading from latest file: {:?}", latest_file);
+
+    // Read and parse the CSV
+    let mut rdr = csv::Reader::from_path(&latest_file)?;
+    let headers = rdr.headers()?.clone();
+
+    // Parse records and filter active ones
+    let mut records: Vec<csv::StringRecord> = rdr
+        .records()
+        .filter_map(|record| record.ok())
+        .filter(|record| {
+            // Get the "Active" column (index 8) and check if it's "true"
+            record.get(8).map(|active| active == "true").unwrap_or(false)
+        })
+        .collect();
+
+    // Sort by market cap (EUR) in descending order
+    records.sort_by(|a, b| {
+        let a_cap: f64 = a.get(4).and_then(|s| s.parse().ok()).unwrap_or(0.0);
+        let b_cap: f64 = b.get(4).and_then(|s| s.parse().ok()).unwrap_or(0.0);
+        b_cap.partial_cmp(&a_cap).unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    // Take top 100
+    let records = records.into_iter().take(100).collect::<Vec<_>>();
+
+    // Create new CSV file for top 100
+    let timestamp = Local::now().format("%Y%m%d_%H%M%S");
+    let output_file = format!("output/top_100_active_{}.csv", timestamp);
+    let mut writer = csv::Writer::from_path(&output_file)?;
+
+    // Write headers and records
+    writer.write_record(&headers)?;
+    for record in records {
+        writer.write_record(&record)?;
+    }
+    writer.flush()?;
+    println!("✅ Top 100 active tickers written to: {}", output_file);
+
+    // Generate heatmap from the new file
+    let results = read_csv_with_market_cap(std::path::Path::new(&output_file))?;
+    generate_market_heatmap(&results, "output/market_heatmap.png")?;
+    println!("✅ Market heatmap generated");
+
+    Ok(())
 }

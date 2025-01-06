@@ -24,3 +24,8 @@ target/
 tmp/
 
 */bin/*
+.direnv/
+.direnv
+*/bin/*
+.direnv/
+.direnv
