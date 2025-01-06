@@ -41,7 +41,6 @@ allow = [
     "Apache-2.0 WITH LLVM-exception",
     "BSL-1.0",
     "BSD-3-Clause",
-    "Unicode-DFS-2016",
     "MPL-2.0",
     "Unicode-3.0",
     "ISC"
