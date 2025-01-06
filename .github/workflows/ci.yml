@@ -29,12 +29,13 @@ jobs:
         nix \
           --extra-experimental-features "nix-command flakes" \
           develop \
-          --command bash -c "cargo install cargo-tarpaulin && cargo tarpaulin --out Xml"
+          --command bash -c "cargo install cargo-tarpaulin && cargo tarpaulin --out lcov --output-dir coverage"
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+        files: coverage/lcov.info
         fail_ci_if_error: true
 
     - name: Run unit tests
