@@ -43,5 +43,5 @@ jobs:
         with:
           name: market-data-${{ github.run_number }}
           path: |
-            *.csv
+            output/*.csv
           retention-days: 90
