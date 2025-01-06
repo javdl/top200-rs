@@ -1,61 +1,69 @@
 mod api;
 mod models;
-mod tui;
 mod viz;
 mod config;
 mod utils;
 
-use std::{collections::HashMap, env, path::PathBuf, sync::Arc, time::Duration};
+use std::{collections::HashMap, env, path::PathBuf, sync::Arc};
 use anyhow::Result;
 use chrono::{Local, NaiveDate};
 use csv::Writer;
 use dotenv::dotenv;
-use futures::future::join_all;
-use indicatif::ProgressBar;
-use tokio;
+use clap::{Parser, Subcommand};
 
 pub use utils::convert_currency;
+
+#[derive(Parser)]
+#[command(name = "top200-rs")]
+#[command(about = "A CLI tool for stock market data analysis", long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Export combined US & non-US stock marketcaps to CSV & generate treemap
+    ExportCombined,
+    /// Export currency exchange rates to CSV
+    ExportRates,
+    /// List US stock marketcaps (Polygon API)
+    ListUs,
+    /// List EU stock marketcaps
+    ListEu,
+    /// Export US stock marketcaps to CSV
+    ExportUs,
+    /// Export EU stock marketcaps to CSV
+    ExportEu,
+    /// Generate Market Heatmap from latest top 100
+    GenerateHeatmap,
+    /// Output top 100 active tickers
+    ListTop100,
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv().ok();
 
-    let options = vec![
-        "Export combined US & non-US stock marketcaps to CSV & generate treemap".to_string(),
-        "Export currency exchange rates to CSV".to_string(),
-        "List US stock marketcaps (Polygon API)".to_string(),
-        "List EU stock marketcaps".to_string(),
-        "Export US stock marketcaps to CSV".to_string(),
-        "Export EU stock marketcaps to CSV".to_string(),
-        "Generate Market Heatmap from latest top 100".to_string(),
-        "Output top 100 active tickers".to_string(),
-        "Exit".to_string(),
-    ];
+    let cli = Cli::parse();
 
-    let selected = tui::start_tui(options)?;
-
-    match selected {
-        Some(ans) => match ans.as_str() {
-            "Export combined US & non-US stock marketcaps to CSV & generate treemap" => {
-                let api_key = env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set");
-                let fmp_client = api::FMPClient::new(api_key);
-                export_details_combined_csv(&fmp_client).await?;
-            }
-            "Export currency exchange rates to CSV" => {
-                let api_key = env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set");
-                let fmp_client = api::FMPClient::new(api_key);
-                export_exchange_rates_csv(&fmp_client).await?;
-            }
-            "List US stock marketcaps (Polygon API)" => list_details_us().await?,
-            "List EU stock marketcaps" => list_details_eu().await?,
-            "Export US stock marketcaps to CSV" => export_details_us_csv().await?,
-            "Export EU stock marketcaps to CSV" => export_details_eu_csv().await?,
-            "Generate Market Heatmap from latest top 100" => generate_heatmap_from_latest()?,
-            "Output top 100 active tickers" => output_top_100_active()?,
-            "Exit" => println!("Exiting..."),
-            _ => unreachable!(),
-        },
-        None => println!("Exiting..."),
+    match cli.command.unwrap_or(Commands::ExportCombined) {
+        Commands::ExportCombined => {
+            let api_key = env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set");
+            let fmp_client = api::FMPClient::new(api_key);
+            export_details_combined_csv(&fmp_client).await?;
+        }
+        Commands::ExportRates => {
+            let api_key = env::var("FINANCIALMODELINGPREP_API_KEY").expect("FINANCIALMODELINGPREP_API_KEY must be set");
+            let fmp_client = api::FMPClient::new(api_key);
+            export_exchange_rates_csv(&fmp_client).await?;
+        }
+        Commands::ListUs => list_details_us().await?,
+        Commands::ListEu => list_details_eu().await?,
+        Commands::ExportUs => export_details_us_csv().await?,
+        Commands::ExportEu => export_details_eu_csv().await?,
+        Commands::GenerateHeatmap => generate_heatmap_from_latest()?,
+        Commands::ListTop100 => output_top_100_active()?,
     }
 
     Ok(())
