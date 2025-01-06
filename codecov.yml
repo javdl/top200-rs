@@ -1,6 +1,30 @@
 # Codecov repository config file
 # https://docs.codecov.com/docs/codecov-yaml#repository-yaml
+
+coverage:
+  status:
+    project:
+      default:
+        # Set coverage targets
+        target: 80%
+        # Allow coverage to drop by 2% before failing
+        threshold: 2%
+    patch:
+      default:
+        # New code should have at least 80% coverage
+        target: 80%
+        # Only check coverage on files changed in the PR
+        only_pulls: true
+
 comment:
   # only post a comment on a PR if the code coverage changes
   # https://docs.codecov.com/docs/codecovyml-reference#comment
   require_changes: true
+  layout: "files"
+  behavior: default
+
+# Ignore test files and build scripts
+ignore:
+  - "tests/**/*"
+  - "benches/**/*"
+  - "build.rs"

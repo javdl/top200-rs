@@ -21,8 +21,21 @@ jobs:
 
     - uses: cachix/cachix-action@v10
       with:
-        name: sequentech
+        name: fashionunited
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
+    - name: Run unit tests with coverage
+      run: |
+        nix \
+          --extra-experimental-features "nix-command flakes" \
+          develop \
+          --command bash -c "cargo install cargo-tarpaulin && cargo tarpaulin --out Xml"
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: true
 
     - name: Run unit tests
       run: |
@@ -48,7 +61,7 @@ jobs:
 
     - uses: cachix/cachix-action@v10
       with:
-        name: sequentech
+        name: fashionunited
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
     - name: Run cargo check
@@ -166,7 +179,7 @@ jobs:
 
     - uses: cachix/cachix-action@v10
       with:
-        name: sequentech
+        name: fashionunited
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
     - name: Check files license compliance with REUSE
@@ -236,7 +249,7 @@ jobs:
 
     - uses: cachix/cachix-action@v10
       with:
-        name: sequentech
+        name: fashionunited
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
     # not running this command in https://github.com/nektos/act
@@ -274,7 +287,7 @@ jobs:
 
     - uses: cachix/cachix-action@v10
       with:
-        name: sequentech
+        name: fashionunited
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
     - name: Build the flake
@@ -297,7 +310,7 @@ jobs:
 
     - uses: cachix/cachix-action@v10
       with:
-        name: sequentech
+        name: fashionunited
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
     - name: Build the flake
