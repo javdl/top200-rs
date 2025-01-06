@@ -9,7 +9,8 @@ use chrono::{Local, NaiveDate};
 use clap::{Parser, Subcommand};
 use csv::Writer;
 use dotenv::dotenv;
-use std::{collections::HashMap, env, path::PathBuf, sync::Arc};
+use glob::glob;
+use std::{collections::HashMap, env, path::{Path, PathBuf}, sync::Arc};
 
 pub use utils::convert_currency;
 
@@ -849,39 +850,35 @@ fn get_rate_map() -> HashMap<String, f64> {
 }
 
 /// Find the latest file in the output directory that matches a pattern
-fn find_latest_file(pattern: &str) -> Result<std::path::PathBuf> {
-    use std::fs;
-
-    let entries = fs::read_dir("output")?
+fn find_latest_file(pattern: &str) -> Result<PathBuf> {
+    let paths: Vec<PathBuf> = glob(pattern)?
         .filter_map(|entry| entry.ok())
-        .filter(|entry| {
-            entry
-                .path()
-                .to_str()
-                .map(|s| s.contains(pattern))
-                .unwrap_or(false)
-        })
-        .collect::<Vec<_>>();
+        .collect();
 
-    let latest_file = entries
+    let latest_file = paths
         .iter()
-        .max_by_key(|entry| entry.metadata().unwrap().modified().unwrap())
+        .max_by_key(|path| path.metadata().unwrap().modified().unwrap())
         .ok_or_else(|| {
             anyhow::anyhow!("No files matching '{}' found in output directory", pattern)
         })?;
 
-    Ok(latest_file.path())
+    Ok(latest_file.to_path_buf())
 }
 
 /// Read CSV file and return records with market cap in EUR
-fn read_csv_with_market_cap(file_path: &std::path::Path) -> Result<Vec<(f64, Vec<String>)>> {
+fn read_csv_with_market_cap(file_path: &Path) -> Result<Vec<(f64, Vec<String>)>> {
     let mut rdr = csv::Reader::from_path(file_path)?;
+    let headers = rdr.headers()?.clone();
+    let market_cap_idx = headers
+        .iter()
+        .position(|h| h == "Market Cap (USD)")
+        .ok_or_else(|| anyhow::anyhow!("Market Cap (USD) column not found"))?;
+
     let mut results = Vec::new();
 
     for record in rdr.records() {
         let record = record?;
-        if let Ok(market_cap) = record[4].parse::<f64>() {
-            // Market Cap (EUR) is at index 4
+        if let Ok(market_cap) = record[market_cap_idx].parse::<f64>() {
             results.push((market_cap, record.iter().map(|s| s.to_string()).collect()));
         }
     }
@@ -891,7 +888,7 @@ fn read_csv_with_market_cap(file_path: &std::path::Path) -> Result<Vec<(f64, Vec
 
 /// Generate a heatmap from the latest top 100 active tickers CSV file
 fn generate_heatmap_from_latest() -> Result<()> {
-    let latest_file = find_latest_file("top_100_active_")?;
+    let latest_file = find_latest_file("output/top_100_active_")?;
     println!("Reading from latest file: {:?}", latest_file);
 
     let results = read_csv_with_market_cap(&latest_file)?;
@@ -905,7 +902,7 @@ fn generate_heatmap_from_latest() -> Result<()> {
 
 /// Output the top 100 active tickers from the latest combined marketcaps CSV file
 pub fn output_top_100_active() -> Result<()> {
-    let latest_file = find_latest_file("combined_marketcaps_")?;
+    let latest_file = find_latest_file("output/combined_marketcaps_")?;
     println!("Reading from latest file: {:?}", latest_file);
 
     // Read and parse the CSV
@@ -956,4 +953,117 @@ pub fn output_top_100_active() -> Result<()> {
     println!("✅ Market heatmap generated");
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::tempdir;
+    use approx::assert_relative_eq;
+
+    #[test]
+    fn test_cli_parsing() {
+        let cli = Cli::try_parse_from(&["top200-rs", "list-us"]).unwrap();
+        assert!(matches!(cli.command, Some(Commands::ListUs)));
+
+        let cli = Cli::try_parse_from(&["top200-rs", "list-eu"]).unwrap();
+        assert!(matches!(cli.command, Some(Commands::ListEu)));
+
+        let cli = Cli::try_parse_from(&["top200-rs", "export-us"]).unwrap();
+        assert!(matches!(cli.command, Some(Commands::ExportUs)));
+
+        let cli = Cli::try_parse_from(&["top200-rs"]).unwrap();
+        assert!(matches!(cli.command, None));
+    }
+
+    #[test]
+    fn test_find_latest_file() {
+        let dir = tempdir().unwrap();
+        let dir_path = dir.path();
+
+        // Create output directory within temp dir
+        let output_dir = dir_path.join("output");
+        fs::create_dir(&output_dir).unwrap();
+
+        // Create some test files
+        fs::write(
+            output_dir.join("combined_marketcaps_20240101_120000.csv"),
+            "test",
+        )
+        .unwrap();
+        fs::write(
+            output_dir.join("combined_marketcaps_20240102_120000.csv"),
+            "test",
+        )
+        .unwrap();
+        let latest_file = output_dir.join("combined_marketcaps_20240103_120000.csv");
+        fs::write(&latest_file, "test").unwrap();
+
+        // Set current directory to temp dir for test
+        std::env::set_current_dir(&dir_path).unwrap();
+
+        let latest = find_latest_file("output/combined_marketcaps_*.csv").unwrap();
+        assert_eq!(latest.canonicalize().unwrap(), latest_file.canonicalize().unwrap());
+    }
+
+    #[test]
+    fn test_get_rate_map() {
+        let rate_map = get_rate_map();
+        
+        // Test that we have some rates
+        assert!(!rate_map.is_empty());
+        assert!(rate_map.len() > 0);
+        
+        // Test that we have at least one of the major currencies
+        let has_major_currency = rate_map.contains_key("EUR/USD") || 
+                               rate_map.contains_key("GBP/USD") ||
+                               rate_map.contains_key("JPY/USD");
+        assert!(has_major_currency, "Rate map should contain at least one major currency");
+    }
+
+    #[tokio::test]
+    async fn test_read_csv_with_market_cap() {
+        let dir = tempdir().unwrap();
+        let test_file = dir.path().join("test.csv");
+        
+        // Create a test CSV file with Market Cap column name matching the code
+        let csv_content = "\
+Ticker,Company Name,Market Cap (USD),Currency,Exchange,Price
+AAPL,Apple Inc.,3000000000000,USD,NASDAQ,150.0
+MSFT,Microsoft Corp.,2500000000000,USD,NASDAQ,300.0
+GOOGL,Alphabet Inc.,2000000000000,USD,NASDAQ,130.0";
+        
+        fs::write(&test_file, csv_content).unwrap();
+
+        let result = read_csv_with_market_cap(&test_file).unwrap();
+        assert_eq!(result.len(), 3);
+        
+        // Check first entry
+        let (market_cap, data) = &result[0];
+        assert_relative_eq!(*market_cap, 3000000000000.0, epsilon = 0.01);
+        assert_eq!(data[0], "AAPL");
+    }
+
+    #[test]
+    fn test_convert_currency() {
+        let rate_map = HashMap::from([
+            ("EUR/USD".to_string(), 1.1),
+            ("USD/EUR".to_string(), 0.91),
+            ("GBP/USD".to_string(), 1.25),
+            ("USD/GBP".to_string(), 0.8),
+        ]);
+
+        // Test USD to EUR conversion using relative comparison
+        let result = convert_currency(100.0, "USD", "EUR", &rate_map);
+        assert_relative_eq!(result, 91.0, epsilon = 0.01);
+        
+        // Test EUR to USD conversion
+        let result = convert_currency(100.0, "EUR", "USD", &rate_map);
+        assert_relative_eq!(result, 110.0, epsilon = 0.01);
+        
+        // Test same currency
+        let result = convert_currency(100.0, "USD", "USD", &rate_map);
+        assert_relative_eq!(result, 100.0, epsilon = 0.01);
+    }
 }
