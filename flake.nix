@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Joost van der Laan <joost@fashionunited.com>
+#
+# SPDX-License-Identifier: AGPL-3.0-only
+
 {
   description = "Development environment for top200-rs";
 
@@ -51,7 +55,7 @@
           # instead of passing `buildInputs` / `nativeBuildInputs`,
             # we refer to an existing derivation here
             inputsFrom = [ bin ];
-            buildInputs = with pkgs; [ reuse ];
+            buildInputs = with pkgs; [ reuse clippy-sarif sarif-fmt ];
           # buildInputs = with pkgs; [
           #   # Rust toolchain
           #   rustToolchain
