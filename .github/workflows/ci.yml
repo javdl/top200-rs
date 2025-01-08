@@ -16,6 +16,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
+    - name: Nix Flake Checker
+      uses: DeterminateSystems/flake-checker-action@v9
     - uses: cachix/install-nix-action@v24
       with:
         install_url: https://github.com/numtide/nix-unstable-installer/releases/download/nix-2.10.0pre20220629_b7eb4ac/install
