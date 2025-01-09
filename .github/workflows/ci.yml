@@ -16,21 +16,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
-    - name: Nix Flake Checker
-      uses: DeterminateSystems/flake-checker-action@v9
-    - uses: cachix/install-nix-action@v24
-      with:
-        install_url: https://github.com/numtide/nix-unstable-installer/releases/download/nix-2.10.0pre20220629_b7eb4ac/install
-        nix_path: nixpkgs=channel:nixos-24.11
-        extra_nix_config: |
-          experimental-features = nix-command flakes
-          connect-timeout = 60
-          stalled-download-timeout = 300
-
-    - uses: cachix/cachix-action@v13
-      with:
-        name: fashionunited
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - uses: actions/checkout@v4
+    - uses: DeterminateSystems/nix-installer-action@main
+    - uses: DeterminateSystems/magic-nix-cache-action@main
+    - uses: DeterminateSystems/flake-checker-action@main
 
     - name: Run unit tests with coverage
       run: |
@@ -75,19 +64,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
-    - uses: cachix/install-nix-action@v24
-      with:
-        install_url: https://github.com/numtide/nix-unstable-installer/releases/download/nix-2.10.0pre20220629_b7eb4ac/install
-        nix_path: nixpkgs=channel:nixos-24.11
-        extra_nix_config: |
-          experimental-features = nix-command flakes
-          connect-timeout = 60
-          stalled-download-timeout = 300
-
-    - uses: cachix/cachix-action@v13
-      with:
-        name: fashionunited
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - uses: actions/checkout@v4
+    - uses: DeterminateSystems/nix-installer-action@main
+    - uses: DeterminateSystems/magic-nix-cache-action@main
+    - uses: DeterminateSystems/flake-checker-action@main
 
     - name: Run cargo check
       run: |
@@ -195,19 +175,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
-    - uses: cachix/install-nix-action@v24
-      with:
-        install_url: https://github.com/numtide/nix-unstable-installer/releases/download/nix-2.10.0pre20220629_b7eb4ac/install
-        nix_path: nixpkgs=channel:nixos-24.11
-        extra_nix_config: |
-          experimental-features = nix-command flakes
-          connect-timeout = 60
-          stalled-download-timeout = 300
-
-    - uses: cachix/cachix-action@v13
-      with:
-        name: fashionunited
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - uses: actions/checkout@v4
+    - uses: DeterminateSystems/nix-installer-action@main
+    - uses: DeterminateSystems/magic-nix-cache-action@main
+    - uses: DeterminateSystems/flake-checker-action@main
 
     - name: Check files license compliance with REUSE
       run: |
@@ -267,19 +238,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
-    - uses: cachix/install-nix-action@v24
-      with:
-        install_url: https://github.com/numtide/nix-unstable-installer/releases/download/nix-2.10.0pre20220629_b7eb4ac/install
-        nix_path: nixpkgs=channel:nixos-24.11
-        extra_nix_config: |
-          experimental-features = nix-command flakes
-          connect-timeout = 60
-          stalled-download-timeout = 300
-
-    - uses: cachix/cachix-action@v13
-      with:
-        name: fashionunited
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - uses: DeterminateSystems/nix-installer-action@main
+    - uses: DeterminateSystems/magic-nix-cache-action@main
+    - uses: DeterminateSystems/flake-checker-action@main
 
     # not running this command in https://github.com/nektos/act
     # why? because it doesn't work for some reason
@@ -307,90 +268,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
-    - uses: cachix/install-nix-action@v24
-      with:
-        install_url: https://github.com/numtide/nix-unstable-installer/releases/download/nix-2.10.0pre20220629_b7eb4ac/install
-        nix_path: nixpkgs=channel:nixos-24.11
-        extra_nix_config: |
-          experimental-features = nix-command flakes
-          connect-timeout = 60
-          stalled-download-timeout = 300
-
-    - uses: cachix/cachix-action@v13
-      with:
-        name: fashionunited
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - uses: actions/checkout@v4
+    - uses: DeterminateSystems/nix-installer-action@main
+    - uses: DeterminateSystems/magic-nix-cache-action@main
+    - uses: DeterminateSystems/flake-checker-action@main
 
     - name: Build the flake
       run: nix --extra-experimental-features "nix-command flakes" build -L
-
-  # browserstack_test:
-  #   name: Browserstack tests
-  #   strategy:
-  #     matrix:
-  #       os: [ubuntu-latest]
-  #   runs-on: ${{ matrix.os }}
-  #   steps:
-  #   - uses: actions/checkout@v4
-  #   - uses: cachix/install-nix-action@v24
-  #     with:
-  #       install_url: https://github.com/numtide/nix-unstable-installer/releases/download/nix-2.10.0pre20220629_b7eb4ac/install
-  #       nix_path: nixpkgs=channel:nixos-24.11
-  #       extra_nix_config: |
-  #         experimental-features = nix-command flakes
-
-  #   - uses: cachix/cachix-action@v13
-  #     with:
-  #       name: fashionunited
-  #       authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-
-  #   - name: Build the flake
-  #     run: nix --extra-experimental-features "nix-command flakes" build -L
-
-  #   - name: Extract wasm files
-  #     run: |
-  #       tar -xf result/*-*.tgz
-  #       mv package pkg
-
-  #   - name: Set up Python 3.8
-  #     uses: actions/setup-python@v5
-  #     with:
-  #       python-version: 3.8
-
-  #   - uses: actions/setup-node@v4
-  #     with:
-  #       node-version: 18
-    
-  #   - name: 'Building web application to be tested'
-  #     run: cd browserstack && npm ci
-
-  #   # https://www.browserstack.com/docs/automate/selenium/github-actions#sample-github-workflow-showing-a-browserstack-test 
-  #   - name: 'BrowserStack Env Setup'  # Invokes the setup-env action
-  #     uses: browserstack/github-actions/setup-env@master
-  #     with:
-  #       username: ${{ secrets.BROWSERSTACK_USERNAME }}
-  #       access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-
-  #   - name: 'BrowserStack Local Tunnel Setup'  # Invokes the setup-local action
-  #     uses: browserstack/github-actions/setup-local@master
-  #     with:
-  #       local-testing: start
-  #       local-identifier: random  
-    
-  #   - name: 'Run local server to serve browserstack tests'
-  #     run: python3 src/wasm/test/serve.py &
-
-  #   - name: 'Running test on BrowserStack'  # Invokes the actual test script that would run on BrowserStack browsers
-  #     env:
-  #       GIT_COMMIT_SHA: ${{ github.sha }}
-  #     run: |
-  #       cd browserstack && \
-  #       GIT_COMMIT_SHA=$GIT_COMMIT_SHA \
-  #       BROWSERSTACK_USERNAME=$BROWSERSTACK_USERNAME \
-  #       BROWSERSTACK_ACCESS_KEY=$BROWSERSTACK_ACCESS_KEY \
-  #       npm run local
-
-  #   - name: 'BrowserStackLocal Stop'  # Terminating the BrowserStackLocal tunnel connection
-  #     uses: browserstack/github-actions/setup-local@master
-  #     with:
-  #       local-testing: stop
