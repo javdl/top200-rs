@@ -13,7 +13,7 @@ use std::{env, time::Duration};
 use tokio::sync::Semaphore;
 use tokio::time::sleep;
 
-use crate::convert_currency;
+use crate::currencies::convert_currency;
 use crate::models::{Details, FMPCompanyProfile, FMPIncomeStatement, FMPRatios, PolygonResponse};
 
 pub struct PolygonClient {
@@ -21,6 +21,7 @@ pub struct PolygonClient {
     api_key: String,
 }
 
+#[derive(Clone)]
 pub struct FMPClient {
     client: Client,
     api_key: String,
@@ -256,21 +257,27 @@ impl FMPClient {
         Ok(statements.into_iter().next())
     }
 
-    pub async fn get_exchange_rates(
-        &self,
-    ) -> Result<Vec<ExchangeRate>, Box<dyn std::error::Error>> {
+    pub async fn get_exchange_rates(&self) -> Result<Vec<ExchangeRate>> {
         let url = format!(
             "https://financialmodelingprep.com/api/v3/quotes/forex?apikey={}",
             self.api_key
         );
 
-        let response = self.client.get(&url).send().await?;
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .context("Failed to send request to FMP forex API")?;
 
         if !response.status().is_success() {
-            return Err(format!("API request failed with status: {}", response.status()).into());
+            anyhow::bail!("API request failed with status: {}", response.status());
         }
 
-        let rates: Vec<ExchangeRate> = response.json().await?;
+        let rates: Vec<ExchangeRate> = response
+            .json()
+            .await
+            .context("Failed to parse forex rates response")?;
         Ok(rates)
     }
 }
@@ -361,4 +368,27 @@ pub struct ExchangeRate {
     #[serde(rename = "previousClose")]
     pub previous_close: Option<f64>,
     pub timestamp: i64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[tokio::test]
+    async fn test_empty_ticker() {
+        let client = FMPClient::new("test_key".to_string());
+        let rate_map = HashMap::new();
+        let result = client.get_details("", &rate_map).await;
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("ticker empty"));
+
+        let client = PolygonClient::new("test_key".to_string());
+        let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
+        let result = client.get_details("", date).await;
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("ticker empty"));
+    }
 }

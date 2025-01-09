@@ -32,5 +32,6 @@ tmp/
 .direnv
 .direnv/*
 
-output/*
+# output/*
 .DS_Store
+coverage/
