@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 mod api;
+mod bar_chart;
 mod config;
 mod currencies;
 mod db;
@@ -43,6 +44,8 @@ enum Commands {
     AddCurrency { code: String, name: String },
     /// List currencies
     ListCurrencies,
+    /// Generate bar chart of top 100 companies
+    GenerateBarChart,
     // /// Generate heatmap
     // GenerateHeatmap,
     // /// List top 100
@@ -84,6 +87,13 @@ async fn main() -> Result<()> {
             for (code, name) in currencies {
                 println!("{}: {}", code, name);
             }
+        }
+        Some(Commands::GenerateBarChart) => {
+            async fn generate_bar_chart_handler() -> Result<()> {
+                bar_chart::generate_bar_chart().await?;
+                Ok(())
+            }
+            generate_bar_chart_handler().await?;
         }
         // Some(Commands::GenerateHeatmap) => {
         //     marketcaps::generate_heatmap_from_latest()?;
