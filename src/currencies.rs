@@ -334,18 +334,33 @@ mod tests {
 
         // Test direct USD conversions
         assert_eq!(convert_currency(100.0, "EUR", "USD", &rate_map), 108.0);
-        assert_eq!(convert_currency(100.0, "USD", "EUR", &rate_map), 92.59259259259258);
+        assert_eq!(
+            convert_currency(100.0, "USD", "EUR", &rate_map),
+            92.59259259259258
+        );
 
         // Test cross rates between major currencies
         let eur_jpy = convert_currency(100.0, "EUR", "JPY", &rate_map);
-        assert!(eur_jpy > 15800.0 && eur_jpy < 15900.0, "EUR/JPY rate should be around 158.82 (got {})", eur_jpy / 100.0);
+        assert!(
+            eur_jpy > 15800.0 && eur_jpy < 15900.0,
+            "EUR/JPY rate should be around 158.82 (got {})",
+            eur_jpy / 100.0
+        );
 
         let eur_chf = convert_currency(100.0, "EUR", "CHF", &rate_map);
-        assert!(eur_chf > 94.0 && eur_chf < 95.0, "EUR/CHF rate should be around 0.947 (got {})", eur_chf / 100.0);
+        assert!(
+            eur_chf > 94.0 && eur_chf < 95.0,
+            "EUR/CHF rate should be around 0.947 (got {})",
+            eur_chf / 100.0
+        );
 
         // Test currencies with different magnitudes
         let jpy_chf = convert_currency(10000.0, "JPY", "CHF", &rate_map);
-        assert!(jpy_chf > 59.5 && jpy_chf < 60.5, "JPY/CHF rate for 10000 JPY should be around 60 CHF (got {})", jpy_chf);
+        assert!(
+            jpy_chf > 59.5 && jpy_chf < 60.5,
+            "JPY/CHF rate for 10000 JPY should be around 60 CHF (got {})",
+            jpy_chf
+        );
 
         // Test GBp (pence) conversion
         assert_eq!(convert_currency(1000.0, "GBp", "USD", &rate_map), 12.5);
@@ -357,11 +372,19 @@ mod tests {
 
         // Test conversion through USD
         let gbp_eur = convert_currency(100.0, "GBP", "EUR", &rate_map);
-        assert!(gbp_eur > 115.0 && gbp_eur < 116.0, "GBP/EUR rate should be around 1.157 (got {})", gbp_eur / 100.0);
+        assert!(
+            gbp_eur > 115.0 && gbp_eur < 116.0,
+            "GBP/EUR rate should be around 1.157 (got {})",
+            gbp_eur / 100.0
+        );
 
         // Test currencies with low unit value
         let sek_jpy = convert_currency(1000.0, "SEK", "JPY", &rate_map);
-        assert!(sek_jpy > 14100.0 && sek_jpy < 14150.0, "SEK/JPY rate for 1000 SEK should be around 14117 JPY (got {})", sek_jpy);
+        assert!(
+            sek_jpy > 14100.0 && sek_jpy < 14150.0,
+            "SEK/JPY rate for 1000 SEK should be around 14117 JPY (got {})",
+            sek_jpy
+        );
     }
 
     #[tokio::test]
