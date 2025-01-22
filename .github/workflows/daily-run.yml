@@ -16,6 +16,7 @@ env:
   # Add your environment variables here
   FINANCIALMODELINGPREP_API_KEY: ${{ secrets.FINANCIALMODELINGPREP_API_KEY }}
   POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
 jobs:
   collect-data:
