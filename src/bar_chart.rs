@@ -1,10 +1,10 @@
-use anyhow::Result;
-use plotters::prelude::*;
-use crate::models::Details;
-use crate::config;
 use crate::api;
-use std::sync::Arc;
+use crate::config;
+use crate::models::Details;
+use anyhow::Result;
 use chrono::Local;
+use plotters::prelude::*;
+use std::sync::Arc;
 
 pub async fn generate_bar_chart() -> Result<()> {
     // First fetch exchange rates and setup client
@@ -64,14 +64,11 @@ fn create_market_bar_chart(stocks: Vec<Details>, output_path: &str) -> Result<()
     let top_stocks = sorted_stocks.into_iter().take(100).collect::<Vec<_>>();
 
     // Setup the drawing area
-    let root_area = BitMapBackend::new(output_path, (1200, 800))
-        .into_drawing_area();
+    let root_area = BitMapBackend::new(output_path, (1200, 800)).into_drawing_area();
     root_area.fill(&WHITE)?;
 
     // Calculate the y-axis range (market caps in billions)
-    let max_cap = top_stocks.first()
-        .and_then(|s| s.market_cap)
-        .unwrap_or(0.0) / 1_000_000_000.0;
+    let max_cap = top_stocks.first().and_then(|s| s.market_cap).unwrap_or(0.0) / 1_000_000_000.0;
     let y_range = 0.0..(max_cap * 1.1); // Add 10% padding
 
     let mut chart = ChartBuilder::on(&root_area)
@@ -83,7 +80,7 @@ fn create_market_bar_chart(stocks: Vec<Details>, output_path: &str) -> Result<()
             ("sans-serif", 30),
         )
         .build_cartesian_2d(
-            0i32..100i32,  // Explicitly using i32
+            0i32..100i32, // Explicitly using i32
             y_range,
         )?;
 
@@ -97,26 +94,22 @@ fn create_market_bar_chart(stocks: Vec<Details>, output_path: &str) -> Result<()
     // Draw the bars
     for (i, stock) in top_stocks.iter().enumerate() {
         let cap_billions = stock.market_cap.unwrap_or(0.0) / 1_000_000_000.0;
-        let i = i as i32;  // Convert index to i32
-        
+        let i = i as i32; // Convert index to i32
+
         // Draw the bar
-        chart.draw_series(std::iter::once(
-            Rectangle::new(
-                [(i, 0.0), (i + 1, cap_billions)],
-                BLUE.mix(0.4).filled(),
-            )
-        ))?;
+        chart.draw_series(std::iter::once(Rectangle::new(
+            [(i, 0.0), (i + 1, cap_billions)],
+            BLUE.mix(0.4).filled(),
+        )))?;
 
         // Draw the label for top 10
         if i < 10 {
             if let Some(name) = &stock.name {
-                chart.draw_series(std::iter::once(
-                    Text::new(
-                        name.clone(),
-                        (i, cap_billions + (max_cap * 0.02)),
-                        ("sans-serif", 15).into_font(),
-                    )
-                ))?;
+                chart.draw_series(std::iter::once(Text::new(
+                    name.clone(),
+                    (i, cap_billions + (max_cap * 0.02)),
+                    ("sans-serif", 15).into_font(),
+                )))?;
             }
         }
     }

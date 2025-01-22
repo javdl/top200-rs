@@ -10,7 +10,8 @@ I'm working on `top200-rs`, a Rust-based market data tracking system for the top
 1. Current Status & Priorities:
    - Database setup and migrations
    - Daily data collection pipeline
-   - Market cap calculations and currency conversions
+   - Market cap calculations
+   - Currency conversions
    - Company ticker tracking and updates
 
 2. Technical Specifications:
