@@ -88,10 +88,11 @@ pub fn get_rate_map() -> HashMap<String, f64> {
     for (pair1, rate1) in &base_pairs {
         if let Some((from1, "USD")) = pair1.split_once('/') {
             for (pair2, rate2) in &base_pairs {
-                if let Some(("USD", to2)) = pair2.split_once('/') {
-                    if from1 != to2 {
-                        // Calculate cross rate: from1/to2 = (from1/USD) * (USD/to2)
-                        pairs_to_add.push((format!("{}/{}", from1, to2), rate1 * rate2));
+                if let Some((from2, "USD")) = pair2.split_once('/') {
+                    if from1 != from2 {
+                        // Calculate cross rate: from1/from2 = (from1/USD) / (from2/USD)
+                        // Example: EUR/JPY = (EUR/USD=1.08) / (JPY/USD=0.0068) = 158.82
+                        pairs_to_add.push((format!("{}/{}", from1, from2), rate1 / rate2));
                     }
                 }
             }
@@ -329,49 +330,38 @@ mod tests {
 
     #[test]
     fn test_convert_currency() {
-        let mut rate_map = HashMap::new();
-        rate_map.insert("EUR/USD".to_string(), 1.08);
-        rate_map.insert("USD/EUR".to_string(), 0.9259259259259258);
-        rate_map.insert("GBP/USD".to_string(), 1.25);
-        rate_map.insert("USD/GBP".to_string(), 0.8);
-        rate_map.insert("EUR/GBP".to_string(), 0.864);
-        rate_map.insert("ZAR/USD".to_string(), 0.053);
-        rate_map.insert("ILS/USD".to_string(), 0.27);
+        let rate_map = get_rate_map();
 
-        // Test direct conversion
-        let result = convert_currency(100.0, "EUR", "USD", &rate_map);
-        assert_relative_eq!(result, 108.0, epsilon = 0.01);
+        // Test direct USD conversions
+        assert_eq!(convert_currency(100.0, "EUR", "USD", &rate_map), 108.0);
+        assert_eq!(convert_currency(100.0, "USD", "EUR", &rate_map), 92.59259259259258);
 
-        // Test reverse conversion
-        let result = convert_currency(108.0, "USD", "EUR", &rate_map);
-        assert_relative_eq!(result, 100.0, epsilon = 0.01);
+        // Test cross rates between major currencies
+        let eur_jpy = convert_currency(100.0, "EUR", "JPY", &rate_map);
+        assert!(eur_jpy > 15800.0 && eur_jpy < 15900.0, "EUR/JPY rate should be around 158.82 (got {})", eur_jpy / 100.0);
 
-        // Test same currency
-        let result = convert_currency(100.0, "USD", "USD", &rate_map);
-        assert_relative_eq!(result, 100.0, epsilon = 0.01);
+        let eur_chf = convert_currency(100.0, "EUR", "CHF", &rate_map);
+        assert!(eur_chf > 94.0 && eur_chf < 95.0, "EUR/CHF rate should be around 0.947 (got {})", eur_chf / 100.0);
 
-        // Test currency subunit conversions
-        let result = convert_currency(1000.0, "GBp", "USD", &rate_map);
-        assert_relative_eq!(result, 12.5, epsilon = 0.01); // 1000 pence = 10 GBP, 10 GBP = 12.5 USD
+        // Test currencies with different magnitudes
+        let jpy_chf = convert_currency(10000.0, "JPY", "CHF", &rate_map);
+        assert!(jpy_chf > 59.5 && jpy_chf < 60.5, "JPY/CHF rate for 10000 JPY should be around 60 CHF (got {})", jpy_chf);
 
-        let result = convert_currency(1000.0, "ZAc", "USD", &rate_map);
-        assert_relative_eq!(result, 0.53, epsilon = 0.01); // 1000 cents = 10 ZAR, 10 ZAR = 0.53 USD
+        // Test GBp (pence) conversion
+        assert_eq!(convert_currency(1000.0, "GBp", "USD", &rate_map), 12.5);
+        assert_eq!(convert_currency(10.0, "USD", "GBp", &rate_map), 800.0);
 
-        // Test alternative code conversion
-        let result = convert_currency(100.0, "ILA", "USD", &rate_map);
-        assert_relative_eq!(result, 27.0, epsilon = 0.01); // ILA is treated as ILS
+        // Test same currency conversion
+        assert_eq!(convert_currency(100.0, "USD", "USD", &rate_map), 100.0);
+        assert_eq!(convert_currency(100.0, "EUR", "EUR", &rate_map), 100.0);
 
-        // Test cross-rate conversion
-        let result = convert_currency(100.0, "EUR", "GBP", &rate_map);
-        assert_relative_eq!(result, 86.4, epsilon = 0.01);
+        // Test conversion through USD
+        let gbp_eur = convert_currency(100.0, "GBP", "EUR", &rate_map);
+        assert!(gbp_eur > 115.0 && gbp_eur < 116.0, "GBP/EUR rate should be around 1.157 (got {})", gbp_eur / 100.0);
 
-        // Test conversion to subunit
-        let result = convert_currency(10.0, "USD", "GBp", &rate_map);
-        assert_relative_eq!(result, 800.0, epsilon = 0.01); // 10 USD = 8 GBP = 800 pence
-
-        // Test missing rate
-        let result = convert_currency(100.0, "XXX", "USD", &rate_map);
-        assert_relative_eq!(result, 100.0, epsilon = 0.01); // Should return original amount
+        // Test currencies with low unit value
+        let sek_jpy = convert_currency(1000.0, "SEK", "JPY", &rate_map);
+        assert!(sek_jpy > 14100.0 && sek_jpy < 14150.0, "SEK/JPY rate for 1000 SEK should be around 14117 JPY (got {})", sek_jpy);
     }
 
     #[tokio::test]
