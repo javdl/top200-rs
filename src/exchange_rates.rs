@@ -64,9 +64,15 @@ pub async fn export_exchange_rates_csv(fmp_client: &FMPClient, pool: &SqlitePool
                 &rate
                     .changes_percentage
                     .map_or_else(|| "".to_string(), |v| v.to_string()),
-                &rate.change.map_or_else(|| "".to_string(), |v| v.to_string()),
-                &rate.day_low.map_or_else(|| "".to_string(), |v| v.to_string()),
-                &rate.day_high.map_or_else(|| "".to_string(), |v| v.to_string()),
+                &rate
+                    .change
+                    .map_or_else(|| "".to_string(), |v| v.to_string()),
+                &rate
+                    .day_low
+                    .map_or_else(|| "".to_string(), |v| v.to_string()),
+                &rate
+                    .day_high
+                    .map_or_else(|| "".to_string(), |v| v.to_string()),
                 base,
                 quote,
                 &timestamp.to_string(),

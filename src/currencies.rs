@@ -58,7 +58,10 @@ pub async fn list_currencies(pool: &SqlitePool) -> Result<Vec<(String, String)>>
 
 /// Get a map of exchange rates between currencies from hardcoded values
 /// Deprecated: Use get_rate_map_from_db instead to get real-time rates
-#[deprecated(since = "0.1.0", note = "Use get_rate_map_from_db instead to get real-time rates")]
+#[deprecated(
+    since = "0.1.0",
+    note = "Use get_rate_map_from_db instead to get real-time rates"
+)]
 pub fn get_rate_map() -> HashMap<String, f64> {
     let mut rate_map = HashMap::new();
 
@@ -112,10 +115,10 @@ pub fn get_rate_map() -> HashMap<String, f64> {
 /// Get a map of exchange rates between currencies from the database
 pub async fn get_rate_map_from_db(pool: &SqlitePool) -> Result<HashMap<String, f64>> {
     let mut rate_map = HashMap::new();
-    
+
     // Get all unique symbols from the database
     let symbols = list_forex_symbols(pool).await?;
-    
+
     // Get latest rates for each symbol
     for symbol in symbols {
         if let Some((ask, _bid, _timestamp)) = get_latest_forex_rate(pool, &symbol).await? {
