@@ -228,9 +228,12 @@ pub fn generate_heatmap_from_top_100(timestamp: &str) -> Result<()> {
         }
     }
 
-    let output_path = format!("output/market_heatmap_{}.png", timestamp);
+    // Only take top 20
+    stock_data.truncate(20);
+
+    let output_path = format!("output/market_heatmap_top_20_{}.png", timestamp);
     crate::viz::create_market_heatmap(stock_data, &output_path)?;
-    println!("✅ Market heatmap generated at: {}", output_path);
+    println!("✅ Market heatmap (top 20) generated at: {}", output_path);
 
     Ok(())
 }
