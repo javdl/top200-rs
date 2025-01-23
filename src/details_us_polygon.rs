@@ -3,13 +3,14 @@ use crate::config;
 use anyhow::Result;
 use chrono::{Local, NaiveDate};
 use csv::Writer;
-use std::{env, path::PathBuf};
+use sqlx::sqlite::SqlitePool;
+use std::{env, path::PathBuf, sync::Arc};
 
-pub async fn export_details_us_csv() -> Result<()> {
+pub async fn export_details_us_csv(_pool: &SqlitePool) -> Result<()> {
     let config = config::load_config()?;
     let tickers = config.us_tickers;
     let api_key = env::var("POLYGON_API_KEY").expect("POLYGON_API_KEY must be set");
-    let client = PolygonClient::new(api_key);
+    let client = Arc::new(PolygonClient::new(api_key));
     let date = NaiveDate::from_ymd_opt(2023, 11, 1).unwrap();
 
     // Create output directory if it doesn't exist
@@ -43,7 +44,7 @@ pub async fn export_details_us_csv() -> Result<()> {
 
     for (i, ticker) in tickers.iter().enumerate() {
         println!(
-            "\nFetching the marketcap for {} ({}/{}) ⌛️",
+            "\nFetching the marketcap for {} ({}/{}) ",
             ticker,
             i + 1,
             tickers.len()
@@ -83,7 +84,7 @@ pub async fn export_details_us_csv() -> Result<()> {
                         .unwrap_or_default(),
                     &details.roe.map(|r| r.to_string()).unwrap_or_default(),
                 ])?;
-                println!("✅ Data written to CSV");
+                println!(" Data written to CSV");
             }
             Err(e) => {
                 eprintln!("Error fetching details for {}: {}", ticker, e);
@@ -97,21 +98,21 @@ pub async fn export_details_us_csv() -> Result<()> {
     }
 
     writer.flush()?;
-    println!("\n✅ CSV file created at: {}", csv_path.display());
+    println!("\n CSV file created at: {}", csv_path.display());
 
     Ok(())
 }
 
-pub async fn list_details_us() -> Result<()> {
+pub async fn list_details_us(_pool: &SqlitePool) -> Result<()> {
     let config = config::load_config()?;
     let tickers = config.us_tickers;
     let api_key = env::var("POLYGON_API_KEY").expect("POLYGON_API_KEY must be set");
-    let client = PolygonClient::new(api_key);
+    let client = Arc::new(PolygonClient::new(api_key));
     let date = NaiveDate::from_ymd_opt(2023, 11, 1).unwrap();
 
     for (i, ticker) in tickers.iter().enumerate() {
         println!(
-            "\nFetching the marketcap for {} ({}/{}) ⌛️",
+            "\nFetching the marketcap for {} ({}/{}) ",
             ticker,
             i + 1,
             tickers.len()

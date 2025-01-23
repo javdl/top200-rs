@@ -1,13 +1,15 @@
 use crate::api;
 use crate::config;
-use crate::currencies::get_rate_map;
+use crate::currencies::get_rate_map_from_db;
+use crate::db;
 use anyhow::Result;
 use chrono::Local;
 use csv::Writer;
+use sqlx::sqlite::SqlitePool;
 use std::path::PathBuf;
 use tokio;
 
-pub async fn export_details_eu_csv() -> Result<()> {
+pub async fn export_details_eu_csv(pool: &SqlitePool) -> Result<()> {
     let config = config::load_config()?;
     let tickers = config.non_us_tickers;
 
@@ -42,7 +44,7 @@ pub async fn export_details_eu_csv() -> Result<()> {
         "ROE",
     ])?;
 
-    let rate_map = get_rate_map();
+    let rate_map = get_rate_map_from_db(pool).await?;
 
     let mut tasks = Vec::new();
 
@@ -122,10 +124,10 @@ pub async fn export_details_eu_csv() -> Result<()> {
     Ok(())
 }
 
-pub async fn list_details_eu() -> Result<()> {
+pub async fn list_details_eu(pool: &SqlitePool) -> Result<()> {
     let config = config::load_config()?;
     let tickers = config.non_us_tickers;
-    let rate_map = get_rate_map();
+    let rate_map = get_rate_map_from_db(pool).await?;
 
     for (i, ticker) in tickers.iter().enumerate() {
         println!(

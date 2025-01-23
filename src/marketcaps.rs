@@ -1,42 +1,26 @@
 use crate::api;
 use crate::config;
-use crate::currencies::convert_currency;
+use crate::currencies::{convert_currency, get_rate_map_from_db};
 use anyhow::Result;
 use chrono::Local;
 use csv::Writer;
-use futures::stream::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::fs;
+use sqlx::sqlite::SqlitePool;
 use std::sync::Arc;
-use std::time::Duration;
 
-pub async fn marketcaps() -> Result<()> {
+pub async fn marketcaps(pool: &SqlitePool) -> Result<()> {
     let config = config::load_config()?;
     let tickers = [config.non_us_tickers, config.us_tickers].concat();
 
-    // First fetch exchange rates
+    // Get latest exchange rates from database
+    println!("Fetching current exchange rates from database...");
+    let rate_map = get_rate_map_from_db(pool).await?;
+    println!("✅ Exchange rates fetched from database");
+
+    // Get FMP client for market data
     let api_key = std::env::var("FINANCIALMODELINGPREP_API_KEY")
         .expect("FINANCIALMODELINGPREP_API_KEY must be set");
     let fmp_client = Arc::new(api::FMPClient::new(api_key));
-
-    println!("Fetching current exchange rates...");
-    let exchange_rates = match fmp_client.get_exchange_rates().await {
-        Ok(rates) => {
-            println!("✅ Exchange rates fetched");
-            rates
-        }
-        Err(e) => {
-            return Err(anyhow::anyhow!("Failed to fetch exchange rates: {}", e));
-        }
-    };
-
-    // Create a map of currency pairs to rates
-    let mut rate_map = std::collections::HashMap::new();
-    for rate in exchange_rates {
-        if let (Some(name), Some(price)) = (rate.name, rate.price) {
-            rate_map.insert(name, price);
-        }
-    }
 
     // Convert exchange prefixes to FMP format
     let timestamp = Local::now().format("%Y%m%d_%H%M%S");

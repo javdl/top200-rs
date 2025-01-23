@@ -1,21 +1,36 @@
 use crate::api::FMPClient;
-use crate::db;
+use crate::currencies::insert_forex_rate;
 use anyhow::Result;
 use chrono::Local;
+use csv::Writer;
+use sqlx::sqlite::SqlitePool;
 use std::fs;
+use std::path::PathBuf;
 
-pub async fn export_exchange_rates_csv(fmp_client: &FMPClient) -> Result<()> {
+pub async fn export_exchange_rates_csv(fmp_client: &FMPClient, pool: &SqlitePool) -> Result<()> {
+    // Create output directory if it doesn't exist
+    let output_dir = PathBuf::from("output");
+    if !output_dir.exists() {
+        fs::create_dir(&output_dir)?;
+    }
+
+    // Fetch exchange rates
     println!("Fetching current exchange rates...");
+    let exchange_rates = match fmp_client.get_exchange_rates().await {
+        Ok(rates) => {
+            println!("✅ Exchange rates fetched");
+            rates
+        }
+        Err(e) => {
+            return Err(anyhow::anyhow!("Failed to fetch exchange rates: {}", e));
+        }
+    };
 
+    // Create CSV file
     let timestamp = Local::now().format("%Y%m%d_%H%M%S");
     let filename = format!("output/exchange_rates_{}.csv", timestamp);
-    fs::create_dir_all("output")?;
     let file = fs::File::create(&filename)?;
-    let mut writer = csv::Writer::from_writer(file);
-
-    // Create database connection pool
-    let db_url = "sqlite:top200.db";
-    let pool = db::create_db_pool(db_url).await?;
+    let mut writer = Writer::from_writer(file);
 
     // Write headers
     writer.write_record(&[
@@ -30,58 +45,38 @@ pub async fn export_exchange_rates_csv(fmp_client: &FMPClient) -> Result<()> {
         "Timestamp",
     ])?;
 
-    match fmp_client.get_exchange_rates().await {
-        Ok(rates) => {
-            // Store rates in database
-            db::store_forex_rates(&pool, &rates).await?;
+    // Write rates and insert into database
+    let timestamp = Local::now().timestamp();
+    for rate in exchange_rates {
+        if let (Some(name), Some(price)) = (rate.name, rate.price) {
+            // Split the symbol into base and quote currencies (e.g., "EUR/USD" -> ["EUR", "USD"])
+            let currencies: Vec<&str> = name.split('/').collect();
+            let (base, quote) = if currencies.len() == 2 {
+                (currencies[0], currencies[1])
+            } else {
+                ("", "")
+            };
 
-            for rate in rates {
-                // Split the symbol into base and quote currencies (e.g., "EUR/USD" -> ["EUR", "USD"])
-                let currencies: Vec<&str> = rate.name.as_deref().unwrap_or("").split('/').collect();
-                let (base, quote) = if currencies.len() == 2 {
-                    (currencies[0], currencies[1])
-                } else {
-                    ("", "")
-                };
-
-                writer.write_record(&[
-                    rate.name.as_deref().unwrap_or(""),
-                    &rate.price.map_or_else(|| "".to_string(), |v| v.to_string()),
-                    &rate
-                        .changes_percentage
-                        .map_or_else(|| "".to_string(), |v| v.to_string()),
-                    &rate
-                        .change
-                        .map_or_else(|| "".to_string(), |v| v.to_string()),
-                    &rate
-                        .day_low
-                        .map_or_else(|| "".to_string(), |v| v.to_string()),
-                    &rate
-                        .day_high
-                        .map_or_else(|| "".to_string(), |v| v.to_string()),
-                    base,
-                    quote,
-                    &rate.timestamp.to_string(),
-                ])?;
-            }
-            println!("✅ Exchange rates written to CSV and database");
-        }
-        Err(e) => {
-            eprintln!("Error fetching exchange rates: {}", e);
+            // Write to CSV
             writer.write_record(&[
-                "ERROR",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                "",
-                &format!("Error: {}", e),
+                &name,
+                &price.to_string(),
+                &rate
+                    .changes_percentage
+                    .map_or_else(|| "".to_string(), |v| v.to_string()),
+                &rate.change.map_or_else(|| "".to_string(), |v| v.to_string()),
+                &rate.day_low.map_or_else(|| "".to_string(), |v| v.to_string()),
+                &rate.day_high.map_or_else(|| "".to_string(), |v| v.to_string()),
+                base,
+                quote,
+                &timestamp.to_string(),
             ])?;
+
+            // Insert into database
+            insert_forex_rate(pool, &name, price, price, timestamp).await?;
         }
     }
 
-    println!("\n✅ CSV file created at: {}", filename);
+    println!("✅ Exchange rates written to {}", filename);
     Ok(())
 }

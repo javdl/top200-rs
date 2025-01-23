@@ -4,32 +4,18 @@ use crate::models::Details;
 use anyhow::Result;
 use chrono::Local;
 use plotters::prelude::*;
+use sqlx::sqlite::SqlitePool;
 use std::sync::Arc;
 
-pub async fn generate_bar_chart() -> Result<()> {
+pub async fn generate_bar_chart(pool: &SqlitePool) -> Result<()> {
     // First fetch exchange rates and setup client
     let api_key = std::env::var("FINANCIALMODELINGPREP_API_KEY")
         .expect("FINANCIALMODELINGPREP_API_KEY must be set");
     let fmp_client = Arc::new(api::FMPClient::new(api_key));
 
-    println!("Fetching current exchange rates...");
-    let exchange_rates = match fmp_client.get_exchange_rates().await {
-        Ok(rates) => {
-            println!("✅ Exchange rates fetched");
-            rates
-        }
-        Err(e) => {
-            return Err(anyhow::anyhow!("Failed to fetch exchange rates: {}", e));
-        }
-    };
-
-    // Create a map of currency pairs to rates
-    let mut rate_map = std::collections::HashMap::new();
-    for rate in exchange_rates {
-        if let (Some(name), Some(price)) = (rate.name, rate.price) {
-            rate_map.insert(name, price);
-        }
-    }
+    println!("Fetching current exchange rates from database...");
+    let rate_map = crate::currencies::get_rate_map_from_db(pool).await?;
+    println!("✅ Exchange rates fetched from database");
 
     // Get config and tickers
     let config = config::load_config()?;

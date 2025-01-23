@@ -56,7 +56,9 @@ pub async fn list_currencies(pool: &SqlitePool) -> Result<Vec<(String, String)>>
     Ok(records)
 }
 
-/// Get a map of exchange rates between currencies
+/// Get a map of exchange rates between currencies from hardcoded values
+/// Deprecated: Use get_rate_map_from_db instead to get real-time rates
+#[deprecated(since = "0.1.0", note = "Use get_rate_map_from_db instead to get real-time rates")]
 pub fn get_rate_map() -> HashMap<String, f64> {
     let mut rate_map = HashMap::new();
 
@@ -105,6 +107,56 @@ pub fn get_rate_map() -> HashMap<String, f64> {
     }
 
     rate_map
+}
+
+/// Get a map of exchange rates between currencies from the database
+pub async fn get_rate_map_from_db(pool: &SqlitePool) -> Result<HashMap<String, f64>> {
+    let mut rate_map = HashMap::new();
+    
+    // Get all unique symbols from the database
+    let symbols = list_forex_symbols(pool).await?;
+    
+    // Get latest rates for each symbol
+    for symbol in symbols {
+        if let Some((ask, _bid, _timestamp)) = get_latest_forex_rate(pool, &symbol).await? {
+            rate_map.insert(symbol.clone(), ask);
+        }
+    }
+
+    // Add reverse rates (if not already in the database)
+    let mut pairs_to_add = Vec::new();
+    for (pair, &rate) in rate_map.clone().iter() {
+        if let Some((from, to)) = pair.split_once('/') {
+            let reverse_pair = format!("{}/{}", to, from);
+            if !rate_map.contains_key(&reverse_pair) {
+                pairs_to_add.push((reverse_pair, 1.0 / rate));
+            }
+        }
+    }
+
+    // Add cross rates (if not already in the database)
+    let base_pairs: Vec<_> = rate_map.clone().into_iter().collect();
+    for (pair1, rate1) in &base_pairs {
+        if let Some((from1, "USD")) = pair1.split_once('/') {
+            for (pair2, rate2) in &base_pairs {
+                if let Some((from2, "USD")) = pair2.split_once('/') {
+                    if from1 != from2 {
+                        let cross_pair = format!("{}/{}", from1, from2);
+                        if !rate_map.contains_key(&cross_pair) {
+                            pairs_to_add.push((cross_pair, rate1 / rate2));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Add all the new pairs
+    for (pair, rate) in pairs_to_add {
+        rate_map.insert(pair, rate);
+    }
+
+    Ok(rate_map)
 }
 
 /// Convert an amount from one currency to another using the rate map
@@ -432,6 +484,58 @@ mod tests {
         assert_relative_eq!(ask, 1.07835, epsilon = 0.00001);
         assert_relative_eq!(bid, 1.07834, epsilon = 0.00001);
         assert_eq!(timestamp, 1701956302);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_rate_map_from_db() -> Result<()> {
+        let pool = db::create_db_pool("sqlite::memory:").await?;
+
+        // Create tables
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS forex_rates (
+                symbol TEXT NOT NULL,
+                ask REAL NOT NULL,
+                bid REAL NOT NULL,
+                timestamp INTEGER NOT NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            "#,
+        )
+        .execute(&pool)
+        .await?;
+
+        // Insert test data
+        insert_forex_rate(&pool, "EUR/USD", 1.03128, 1.0321, 1736432800).await?;
+        insert_forex_rate(&pool, "JPY/USD", 0.00675, 0.00674, 1736432800).await?;
+        insert_forex_rate(&pool, "CHF/USD", 1.15, 1.149, 1736432800).await?;
+
+        // Get rate map from db
+        let rate_map = get_rate_map_from_db(&pool).await?;
+
+        // Test direct rates
+        assert_eq!(rate_map.get("EUR/USD"), Some(&1.03128));
+        assert_eq!(rate_map.get("JPY/USD"), Some(&0.00675));
+        assert_eq!(rate_map.get("CHF/USD"), Some(&1.15));
+
+        // Test reverse rates
+        assert!(
+            (rate_map.get("USD/EUR").unwrap() - (1.0 / 1.03128)).abs() < 0.0001,
+            "USD/EUR rate incorrect"
+        );
+
+        // Test cross rates
+        let eur_jpy = rate_map.get("EUR/JPY").unwrap();
+        let expected_eur_jpy = 1.03128 / 0.00675;
+        assert!(
+            (eur_jpy - expected_eur_jpy).abs() < 0.0001,
+            "EUR/JPY rate incorrect: got {}, expected {}",
+            eur_jpy,
+            expected_eur_jpy
+        );
 
         Ok(())
     }

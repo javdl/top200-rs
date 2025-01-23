@@ -17,6 +17,7 @@ mod viz;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use sqlx::sqlite::SqlitePool;
 use std::env;
 
 #[derive(Debug, Parser)]
@@ -58,42 +59,41 @@ async fn main() -> Result<()> {
 
     let cli = Cli::parse();
 
+    let db_url = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:data.db".to_string());
+    let pool = db::create_db_pool(&db_url).await?;
+
     match cli.command {
-        Some(Commands::ExportUs) => details_us_polygon::export_details_us_csv().await?,
-        Some(Commands::ExportEu) => details_eu_fmp::export_details_eu_csv().await?,
+        Some(Commands::ExportUs) => details_us_polygon::export_details_us_csv(&pool).await?,
+        Some(Commands::ExportEu) => details_eu_fmp::export_details_eu_csv(&pool).await?,
         Some(Commands::ExportCombined) => {
-            // details_us_polygon::export_details_us_csv().await?;
-            // details_eu_fmp::export_details_eu_csv().await?;
-            marketcaps::marketcaps().await?;
+            // details_us_polygon::export_details_us_csv(&pool).await?;
+            // details_eu_fmp::export_details_eu_csv(&pool).await?;
+            marketcaps::marketcaps(&pool).await?;
         }
-        Some(Commands::ListUs) => details_us_polygon::list_details_us().await?,
-        Some(Commands::ListEu) => details_eu_fmp::list_details_eu().await?,
+        Some(Commands::ListUs) => details_us_polygon::list_details_us(&pool).await?,
+        Some(Commands::ListEu) => details_eu_fmp::list_details_eu(&pool).await?,
         Some(Commands::ExportRates) => {
             let api_key = env::var("FINANCIALMODELINGPREP_API_KEY")
                 .expect("FINANCIALMODELINGPREP_API_KEY must be set");
             let fmp_client = api::FMPClient::new(api_key);
-            exchange_rates::export_exchange_rates_csv(&fmp_client).await?;
+            exchange_rates::export_exchange_rates_csv(&fmp_client, &pool).await?;
         }
         Some(Commands::AddCurrency { code, name }) => {
-            let db_url = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:data.db".to_string());
-            let pool = db::create_db_pool(&db_url).await?;
             currencies::insert_currency(&pool, &code, &name).await?;
             println!("Added currency: {} ({})", name, code);
         }
         Some(Commands::ListCurrencies) => {
-            let db_url = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:data.db".to_string());
-            let pool = db::create_db_pool(&db_url).await?;
             let currencies = currencies::list_currencies(&pool).await?;
             for (code, name) in currencies {
                 println!("{}: {}", code, name);
             }
         }
         Some(Commands::GenerateBarChart) => {
-            async fn generate_bar_chart_handler() -> Result<()> {
-                bar_chart::generate_bar_chart().await?;
+            async fn generate_bar_chart_handler(pool: &SqlitePool) -> Result<()> {
+                bar_chart::generate_bar_chart(pool).await?;
                 Ok(())
             }
-            generate_bar_chart_handler().await?;
+            generate_bar_chart_handler(&pool).await?;
         }
         // Some(Commands::GenerateHeatmap) => {
         //     marketcaps::generate_heatmap_from_latest()?;
@@ -102,7 +102,7 @@ async fn main() -> Result<()> {
         //     marketcaps::output_top_100_active()?;
         // }
         None => {
-            marketcaps::marketcaps().await?;
+            marketcaps::marketcaps(&pool).await?;
         }
     }
 
