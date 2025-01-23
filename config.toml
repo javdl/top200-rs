@@ -86,7 +86,7 @@ non_us_tickers = [
 ]
 
 us_tickers = [
-    "BCUCY", # Brunello Cucinelli
+    # "BCUCY", # Brunello Cucinelli > duplicate, use european listing.
     "MYTE", # Mytheresa
     "BIRK", # Birkenstock
     "DBI", # DSW -> Designer Brands Inc. (DBI)
