@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 mod api;
-mod bar_chart;
 mod config;
 mod currencies;
 mod db;
@@ -13,13 +12,14 @@ mod exchange_rates;
 mod historical_marketcaps;
 mod marketcaps;
 mod models;
+mod ticker_details;
 mod utils;
-mod viz;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use sqlx::sqlite::SqlitePool;
+// use sqlx::sqlite::SqlitePool;
 use std::env;
+use tokio;
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -48,12 +48,6 @@ enum Commands {
     AddCurrency { code: String, name: String },
     /// List currencies
     ListCurrencies,
-    /// Generate bar chart of top 100 companies
-    GenerateBarChart,
-    // /// Generate heatmap
-    // GenerateHeatmap,
-    // /// List top 100
-    // ListTop100,
 }
 
 #[tokio::main]
@@ -69,8 +63,6 @@ async fn main() -> Result<()> {
         Some(Commands::ExportUs) => details_us_polygon::export_details_us_csv(&pool).await?,
         Some(Commands::ExportEu) => details_eu_fmp::export_details_eu_csv(&pool).await?,
         Some(Commands::ExportCombined) => {
-            // details_us_polygon::export_details_us_csv(&pool).await?;
-            // details_eu_fmp::export_details_eu_csv(&pool).await?;
             marketcaps::marketcaps(&pool).await?;
         }
         Some(Commands::ListUs) => details_us_polygon::list_details_us(&pool).await?,
@@ -79,7 +71,7 @@ async fn main() -> Result<()> {
             let api_key = env::var("FINANCIALMODELINGPREP_API_KEY")
                 .expect("FINANCIALMODELINGPREP_API_KEY must be set");
             let fmp_client = api::FMPClient::new(api_key);
-            exchange_rates::export_exchange_rates_csv(&fmp_client, &pool).await?;
+            exchange_rates::update_exchange_rates(&fmp_client, &pool).await?;
         }
         Some(Commands::FetchHistoricalMarketCaps {
             start_year,
@@ -88,8 +80,15 @@ async fn main() -> Result<()> {
             historical_marketcaps::fetch_historical_marketcaps(&pool, start_year, end_year).await?;
         }
         Some(Commands::AddCurrency { code, name }) => {
+            let api_key = env::var("FINANCIALMODELINGPREP_API_KEY")
+                .expect("FINANCIALMODELINGPREP_API_KEY must be set");
+            let fmp_client = api::FMPClient::new(api_key);
+            currencies::update_currencies(&fmp_client, &pool).await?;
+            println!("✅ Currencies updated from FMP API");
+            
+            // Also add the manually specified currency
             currencies::insert_currency(&pool, &code, &name).await?;
-            println!("Added currency: {} ({})", name, code);
+            println!("✅ Added currency: {} ({})", name, code);
         }
         Some(Commands::ListCurrencies) => {
             let currencies = currencies::list_currencies(&pool).await?;
@@ -97,19 +96,6 @@ async fn main() -> Result<()> {
                 println!("{}: {}", code, name);
             }
         }
-        Some(Commands::GenerateBarChart) => {
-            async fn generate_bar_chart_handler(pool: &SqlitePool) -> Result<()> {
-                bar_chart::generate_bar_chart(pool).await?;
-                Ok(())
-            }
-            generate_bar_chart_handler(&pool).await?;
-        }
-        // Some(Commands::GenerateHeatmap) => {
-        //     marketcaps::generate_heatmap_from_latest()?;
-        // }
-        // Some(Commands::ListTop100) => {
-        //     marketcaps::output_top_100_active()?;
-        // }
         None => {
             marketcaps::marketcaps(&pool).await?;
         }

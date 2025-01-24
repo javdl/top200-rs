@@ -1,0 +1,63 @@
+# top200-rs Project Overview
+
+I'm working on `top200-rs`, a Rust-based market data tracking system for the top 200 fashion and retail companies. Here are the key documents to help you understand the current state and context:
+
+// General guidelines
+Always use Markdown for documentation and README files
+Maintain the existing structure of the README.md file
+
+// README.md structure
+Maintain the following structure in the README.md file:
+
+  1. Title and Awesome badge
+  2. Fork information and differences
+  3. Short description
+  4. "Why Use Rules in Windsurf?" section
+     - Benefits of Global Rules
+     - Benefits of Workspace Rules
+  5. Content
+     - Global Rules
+     - Workspace Rules
+  6. Directories
+  7. How to Use section
+  8. Contributing section
+  9. License section
+
+- Main Documentation: [README.md](README.md) - Core vision, implementation details, and setup instructions
+- Data Collection: Daily automated collection of market cap data for fashion/retail companies
+- Market Analysis: Support for US, EU, and combined market analysis
+- Historical Tracking: End-of-year valuations and market cap history
+
+1. Current Status & Priorities:
+   - Database setup and migrations
+   - Daily data collection pipeline
+   - Market cap calculations
+   - Currency conversions
+   - Company ticker tracking and updates
+
+2. Technical Specifications:
+   - Core Components:
+      - SQLite database for data storage
+      - Async Rust implementation with Tokio
+      - HTTP client for market data fetching
+      - Data export functionality for different regions
+   - Configuration:
+      - Environment variables in `.env`
+      - Application settings in `config.toml`
+      - Database migrations in `/migrations`
+
+3. Main Implementation Directories:
+   - `/src`: Core Rust implementation
+   - `/migrations`: Database schema and updates
+   - `/top200.db`: Market data storage (SQLite)
+   - `/output`: Generated reports and analysis
+
+Based on the project structure and recent updates, here are suggested areas to focus on:
+
+1. Database setup and initial data collection
+2. Implementation of market cap calculation logic
+3. Setting up automated daily data collection
+4. Adding support for additional market regions
+5. Implementing data visualization and reporting
+
+The project uses modern Rust tooling with SQLx for database operations, and includes comprehensive CI/CD through GitHub Actions for reliable deployment and testing.
