@@ -21,3 +21,8 @@ pub async fn create_db_pool(db_url: &str) -> Result<SqlitePool> {
 
     Ok(pool)
 }
+
+#[cfg(test)]
+pub async fn create_test_pool() -> Result<SqlitePool> {
+    create_db_pool("sqlite::memory:").await
+}
