@@ -2,10 +2,7 @@ use crate::api::FMPClient;
 use crate::currencies::insert_forex_rate;
 use anyhow::Result;
 use chrono::Local;
-use csv::Writer;
 use sqlx::sqlite::SqlitePool;
-use std::fs;
-use std::path::PathBuf;
 
 /// Update exchange rates in the database
 pub async fn update_exchange_rates(fmp_client: &FMPClient, pool: &SqlitePool) -> Result<()> {
