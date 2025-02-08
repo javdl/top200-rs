@@ -1,6 +1,3 @@
-# SPDX-FileCopyrightText: 2025 Joost van der Laan
-# SPDX-License-Identifier: AGPL-3.0-only
-
 name: "Publish tags to FlakeHub"
 on:
   push:
@@ -26,6 +23,6 @@ jobs:
       - uses: "DeterminateSystems/flakehub-push@main"
         with:
           visibility: "public"
-          name: "javdl/top200-rs"
+          name: "fuww/top200-rs"
           tag: "${{ inputs.tag }}"
           include-output-paths: true
