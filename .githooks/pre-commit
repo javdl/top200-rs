@@ -1,0 +1,8 @@
+#!/bin/sh
+
+cargo fmt --all --check
+
+if [ $? -ne 0 ]; then
+  echo "Formatting check failed. Please run 'cargo fmt --all' and commit again."
+  exit 1
+fi
