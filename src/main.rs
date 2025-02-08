@@ -86,7 +86,10 @@ async fn main() -> Result<()> {
             start_year,
             end_year,
         }) => {
-            monthly_historical_marketcaps::fetch_monthly_historical_marketcaps(&pool, start_year, end_year).await?;
+            monthly_historical_marketcaps::fetch_monthly_historical_marketcaps(
+                &pool, start_year, end_year,
+            )
+            .await?;
         }
         Some(Commands::AddCurrency { code, name }) => {
             let api_key = env::var("FINANCIALMODELINGPREP_API_KEY")
@@ -94,7 +97,7 @@ async fn main() -> Result<()> {
             let fmp_client = api::FMPClient::new(api_key);
             currencies::update_currencies(&fmp_client, &pool).await?;
             println!("✅ Currencies updated from FMP API");
-            
+
             // Also add the manually specified currency
             currencies::insert_currency(&pool, &code, &name).await?;
             println!("✅ Added currency: {} ({})", name, code);

@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-only
 
+use crate::api::FMPClient;
 use anyhow::Result;
 use sqlx::sqlite::SqlitePool;
 use std::collections::HashMap;
-use crate::api::FMPClient;
 
 /// Insert a currency into the database
 pub async fn insert_currency(pool: &SqlitePool, code: &str, name: &str) -> Result<()> {
@@ -361,7 +361,10 @@ mod tests {
         let rate_map = get_rate_map_from_db(&pool).await?;
 
         // Test direct USD conversions
-        assert_eq!(convert_currency(100.0, "EUR", "USD", &rate_map), 100.0 * 1.08);
+        assert_eq!(
+            convert_currency(100.0, "EUR", "USD", &rate_map),
+            100.0 * 1.08
+        );
         assert_eq!(
             convert_currency(100.0, "USD", "EUR", &rate_map),
             100.0 / 1.08
@@ -517,7 +520,9 @@ mod tests {
         // Test updating an existing currency
         insert_currency(&pool, "XYZ", "Updated Currency").await?;
         let updated = list_currencies(&pool).await?;
-        assert!(updated.iter().any(|(c, n)| c == "XYZ" && n == "Updated Currency"));
+        assert!(updated
+            .iter()
+            .any(|(c, n)| c == "XYZ" && n == "Updated Currency"));
 
         // Test getting non-existent currency
         let missing = list_currencies(&pool).await?;
