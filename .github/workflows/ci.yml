@@ -14,13 +14,18 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/checkout@v4
     - uses: DeterminateSystems/nix-installer-action@main
-    - uses: DeterminateSystems/magic-nix-cache-action@main
+      with:
+        determinate: true
+    - uses: DeterminateSystems/flakehub-cache-action@main
     - uses: DeterminateSystems/flake-checker-action@main
 
     - name: Run unit tests with coverage
@@ -64,11 +69,16 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
     steps:
     - uses: actions/checkout@v4
     - uses: actions/checkout@v4
     - uses: DeterminateSystems/nix-installer-action@main
-    - uses: DeterminateSystems/magic-nix-cache-action@main
+      with:
+        determinate: true
+    - uses: DeterminateSystems/flakehub-cache-action@main
     - uses: DeterminateSystems/flake-checker-action@main
 
     - name: Run cargo check
@@ -140,11 +150,16 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
     steps:
     - uses: actions/checkout@v4
     - uses: actions/checkout@v4
     - uses: DeterminateSystems/nix-installer-action@main
-    - uses: DeterminateSystems/magic-nix-cache-action@main
+      with:
+        determinate: true
+    - uses: DeterminateSystems/flakehub-cache-action@main
     - uses: DeterminateSystems/flake-checker-action@main
 
     - name: Check files license compliance with REUSE
@@ -203,10 +218,15 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
     steps:
     - uses: actions/checkout@v4
     - uses: DeterminateSystems/nix-installer-action@main
-    - uses: DeterminateSystems/magic-nix-cache-action@main
+      with:
+        determinate: true
+    - uses: DeterminateSystems/flakehub-cache-action@main
     - uses: DeterminateSystems/flake-checker-action@main
 
     # not running this command in https://github.com/nektos/act
@@ -233,11 +253,16 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
     steps:
     - uses: actions/checkout@v4
     - uses: actions/checkout@v4
     - uses: DeterminateSystems/nix-installer-action@main
-    - uses: DeterminateSystems/magic-nix-cache-action@main
+      with:
+        determinate: true
+    - uses: DeterminateSystems/flakehub-cache-action@main
     - uses: DeterminateSystems/flake-checker-action@main
 
     - name: Build the flake
