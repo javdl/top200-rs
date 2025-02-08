@@ -119,7 +119,7 @@ fn get_last_day_of_month(year: i32, month: u32) -> NaiveDate {
     } else {
         NaiveDate::from_ymd_opt(year, month + 1, 1).unwrap()
     };
-    first_day_next_month.pred()
+    first_day_next_month.pred_opt().unwrap()
 }
 
 #[cfg(test)]
