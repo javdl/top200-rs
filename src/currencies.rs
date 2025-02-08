@@ -212,27 +212,6 @@ pub async fn list_forex_symbols(pool: &SqlitePool) -> Result<Vec<String>> {
     Ok(records.into_iter().map(|(symbol,)| symbol).collect())
 }
 
-/// Get forex rates for a symbol within a timestamp range
-pub async fn get_forex_rates(
-    pool: &SqlitePool,
-    symbol: &str,
-    start_timestamp: i64,
-    end_timestamp: i64,
-) -> Result<Vec<(f64, f64, i64)>> {
-    let rates = sqlx::query_as::<_, (f64, f64, i64)>(
-        "SELECT ask, bid, timestamp FROM forex_rates 
-         WHERE symbol = ? AND timestamp >= ? AND timestamp <= ?
-         ORDER BY timestamp DESC",
-    )
-    .bind(symbol)
-    .bind(start_timestamp)
-    .bind(end_timestamp)
-    .fetch_all(pool)
-    .await?;
-
-    Ok(rates)
-}
-
 /// Update currencies from FMP API
 pub async fn update_currencies(fmp_client: &FMPClient, pool: &SqlitePool) -> Result<()> {
     println!("Fetching currencies from FMP API...");
@@ -425,10 +404,6 @@ mod tests {
         assert_relative_eq!(bid, 1.07833, epsilon = 0.00001);
         assert_eq!(timestamp, 1701956302);
 
-        // Test getting rates in range
-        let rates = get_forex_rates(&pool, "EURUSD", 1701956300, 1701956303).await?;
-        assert_eq!(rates.len(), 2);
-
         // Test listing symbols
         let symbols = list_forex_symbols(&pool).await?;
         assert_eq!(symbols.len(), 2);
@@ -438,10 +413,6 @@ mod tests {
         // Test getting non-existent rate
         let missing = get_latest_forex_rate(&pool, "XXXYYY").await?;
         assert!(missing.is_none());
-
-        // Test getting rates with empty range
-        let empty_range = get_forex_rates(&pool, "EURUSD", 1701956303, 1701956304).await?;
-        assert!(empty_range.is_empty());
 
         // Test rate update with same timestamp (should update values)
         insert_forex_rate(&pool, "EURUSD", 1.07835, 1.07834, 1701956302).await?;
