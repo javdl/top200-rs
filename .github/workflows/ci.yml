@@ -253,6 +253,8 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     permissions:
       contents: read
       id-token: write
