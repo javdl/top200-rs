@@ -1,0 +1,6 @@
+Symbol,Ticker,Name,Market Cap (Original),Original Currency,Market Cap (EUR),Market Cap (USD),Exchange,Active,Description,Homepage URL,Employees,Timestamp
+LVMH,LVMH,Test Company LVMH,364214008782,€,364214008782,364214008782,EUR,true,Test Description for LVMH,https://lvmh.com,100,
+NIKE,NIKE,Test Company NIKE,150000000000,$,150000000000,150000000000,USD,true,Test Description for NIKE,https://nike.com,100,
+ADDYY,ADDYY,Test Company ADDYY,30000000000,€,30000000000,30000000000,EUR,true,Test Description for ADDYY,https://addyy.com,100,
+PUMA,PUMA,Test Company PUMA,5000000000,€,5000000000,5000000000,EUR,true,Test Description for PUMA,https://puma.com,100,
+COLM,COLM,Test Company COLM,4000000000,$,4000000000,4000000000,USD,true,Test Description for COLM,https://colm.com,100,

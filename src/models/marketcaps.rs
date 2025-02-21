@@ -246,7 +246,7 @@ pub async fn export_top_100_active(pool: &SqlitePool) -> Result<()> {
 
     // Filter for active companies first, then take top 100
     let active_results: Vec<_> = results
-        .iter()
+        .into_iter()
         .filter(|(_, record)| record[8] == "true") // Active column
         .take(100)
         .collect();

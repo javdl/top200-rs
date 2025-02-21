@@ -9,49 +9,62 @@ use csv::Reader;
 async fn test_market_caps_operations() -> Result<()> {
     let pool = db::create_test_pool().await?;
 
-    // Test storing market cap data
-    let details = Details {
-        ticker: "TEST".to_string(),
-        market_cap: Some(1000000.0),
-        name: Some("Test Company".to_string()),
-        currency_name: Some("USD".to_string()),
-        currency_symbol: Some("$".to_string()),
-        active: Some(true),
-        description: Some("Test Description".to_string()),
-        homepage_url: Some("https://test.com".to_string()),
-        weighted_shares_outstanding: Some(1000.0),
-        employees: Some("100".to_string()),
-        revenue: Some(500000.0),
-        revenue_usd: Some(500000.0),
-        timestamp: Some("2025-02-21".to_string()),
-        working_capital_ratio: Some(1.5),
-        quick_ratio: Some(1.2),
-        eps: Some(2.5),
-        pe_ratio: Some(20.0),
-        debt_equity_ratio: Some(0.5),
-        roe: Some(0.15),
-        extra: HashMap::from([
-            ("roa".to_string(), json!(0.1)),
-            ("price_to_book_ratio".to_string(), json!(2.0)),
-            ("price_to_sales_ratio".to_string(), json!(3.0)),
-            ("enterprise_value".to_string(), json!(1500000.0)),
-        ]),
-    };
+    // Test data with different market caps
+    let test_data = vec![
+        ("LVMH", 364214008782.0, "EUR"),
+        ("NIKE", 150000000000.0, "USD"),
+        ("ADDYY", 30000000000.0, "EUR"),
+        ("PUMA", 5000000000.0, "EUR"),
+        ("COLM", 4000000000.0, "USD"),
+    ];
 
+    let timestamp = chrono::Local::now().timestamp();
     let rate_map = HashMap::from([
         ("USD/EUR".to_string(), 0.85),
         ("EUR/USD".to_string(), 1.18),
     ]);
 
-    let timestamp = chrono::Local::now().timestamp();
-    store_market_cap(&pool, &details, &rate_map, timestamp).await?;
+    // Store multiple test records
+    for (ticker, market_cap, currency) in test_data {
+        let details = Details {
+            ticker: ticker.to_string(),
+            market_cap: Some(market_cap),
+            name: Some(format!("Test Company {}", ticker)),
+            currency_name: Some(currency.to_string()),
+            currency_symbol: Some(if currency == "USD" { "$" } else { "€" }.to_string()),
+            active: Some(true),
+            description: Some(format!("Test Description for {}", ticker)),
+            homepage_url: Some(format!("https://{}.com", ticker.to_lowercase())),
+            weighted_shares_outstanding: Some(1000.0),
+            employees: Some("100".to_string()),
+            revenue: Some(500000.0),
+            revenue_usd: Some(500000.0),
+            timestamp: Some("2025-02-21".to_string()),
+            working_capital_ratio: Some(1.5),
+            quick_ratio: Some(1.2),
+            eps: Some(2.5),
+            pe_ratio: Some(20.0),
+            debt_equity_ratio: Some(0.5),
+            roe: Some(0.15),
+            extra: HashMap::from([
+                ("roa".to_string(), json!(0.1)),
+                ("price_to_book_ratio".to_string(), json!(2.0)),
+                ("price_to_sales_ratio".to_string(), json!(3.0)),
+                ("enterprise_value".to_string(), json!(1500000.0)),
+            ]),
+        };
+
+        store_market_cap(&pool, &details, &rate_map, timestamp).await?;
+    }
 
     // Test getting market caps
     let market_caps = get_market_caps(&pool).await?;
-    assert!(!market_caps.is_empty());
-    let (market_cap, details) = &market_caps[0];
-    assert!(market_cap > &0.0);
-    assert!(!details.is_empty());
+    assert_eq!(market_caps.len(), 5, "Should have 5 market cap records");
+    
+    // Verify market caps are ordered correctly
+    let (highest_mc, highest_details) = &market_caps[0];
+    assert!(highest_mc > &0.0);
+    assert_eq!(highest_details[0], "LVMH");
 
     // Create output directory if it doesn't exist
     std::fs::create_dir_all("output")?;
@@ -86,8 +99,12 @@ async fn test_market_caps_operations() -> Result<()> {
         assert!(headers.iter().any(|h| h == header), "Missing header: {}", header);
     }
 
+    // Count the number of records
+    let record_count = rdr.records().count();
+    assert_eq!(record_count, 5, "CSV should contain 5 records");
+
     // Validate data types and values in each row
-    for result in rdr.records() {
+    for result in rdr.into_records() {
         let record = result?;
         
         // Check Symbol and Ticker match
