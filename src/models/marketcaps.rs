@@ -1,9 +1,10 @@
 use crate::api;
+use crate::api::FMPClientTrait;
 use crate::config;
-use crate::currencies::{convert_currency, get_rate_map_from_db, update_currencies};
-use crate::exchange_rates;
-use crate::models;
-use crate::ticker_details::{self, TickerDetails};
+use super::currencies::{convert_currency, get_rate_map_from_db, update_currencies};
+use super::exchange_rates;
+use super::ticker_details::{self, TickerDetails};
+use crate::models::types::Details;
 use anyhow::Result;
 use chrono::Local;
 use csv::Writer;
@@ -12,7 +13,7 @@ use sqlx::sqlite::SqlitePool;
 use std::sync::Arc;
 
 /// Store market cap data in the database
-async fn store_market_cap(pool: &SqlitePool, details: &models::Details, rate_map: &std::collections::HashMap<String, f64>, timestamp: i64) -> Result<()> {
+async fn store_market_cap(pool: &SqlitePool, details: &Details, rate_map: &std::collections::HashMap<String, f64>, timestamp: i64) -> Result<()> {
     let original_market_cap = details.market_cap.unwrap_or(0.0) as i64;
     let currency = details.currency_symbol.clone().unwrap_or_default();
     let eur_market_cap = convert_currency(original_market_cap as f64, &currency, "EUR", rate_map) as i64;
@@ -55,7 +56,7 @@ async fn store_market_cap(pool: &SqlitePool, details: &models::Details, rate_map
 }
 
 /// Fetch market cap data from the database
-async fn get_market_caps(pool: &SqlitePool) -> Result<Vec<(f64, Vec<String>)>> {
+pub async fn get_market_caps(pool: &SqlitePool) -> Result<Vec<(f64, Vec<String>)>> {
     let records = sqlx::query!(
         r#"
         SELECT 
@@ -108,7 +109,7 @@ async fn get_market_caps(pool: &SqlitePool) -> Result<Vec<(f64, Vec<String>)>> {
 }
 
 /// Update market cap data in the database
-async fn update_market_caps(pool: &SqlitePool) -> Result<()> {
+pub async fn update_market_caps(pool: &SqlitePool) -> Result<()> {
     let config = config::load_config()?;
     let tickers = [config.non_us_tickers, config.us_tickers].concat();
 
@@ -140,21 +141,21 @@ async fn update_market_caps(pool: &SqlitePool) -> Result<()> {
 
     // Update market cap data in database
     println!("Updating market cap data in database...");
-    let mut failed_tickers = Vec::new();
+    let failed_tickers: Vec<(&str, String)> = Vec::new();
     for ticker in &tickers {
         let rate_map = rate_map.clone();
         let fmp_client = fmp_client.clone();
 
-        match fmp_client.get_details(ticker, &rate_map).await {
-            Ok(details) => {
+        match fmp_client.get_details(ticker, &rate_map).await? {
+            Some(details) => {
                 if let Err(e) = store_market_cap(pool, &details, &rate_map, timestamp).await {
-                    eprintln!("Failed to store market cap for {}: {}", ticker, e);
-                    failed_tickers.push((ticker, format!("Failed to store market cap: {}", e)));
+                    eprintln!("❌ Failed to store market cap for {}: {}", ticker, e);
+                } else {
+                    println!("✅ Added market cap for {}", ticker);
                 }
             }
-            Err(e) => {
-                eprintln!("Failed to fetch details for {}: {}", ticker, e);
-                failed_tickers.push((ticker, format!("Failed to fetch details: {}", e)));
+            None => {
+                eprintln!("❌ No details found for {}", ticker);
             }
         }
         progress.inc(1);

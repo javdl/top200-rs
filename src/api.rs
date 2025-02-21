@@ -13,15 +13,15 @@ use std::{env, time::Duration};
 use tokio::sync::Semaphore;
 use tokio::time::sleep;
 
-use crate::currencies::convert_currency;
+use crate::models::currencies::convert_currency;
 use crate::models::{Details, FMPCompanyProfile, FMPIncomeStatement, FMPRatios, PolygonResponse};
 
 use mockall::automock;
 
-#[automock]
+#[async_trait::async_trait]
 pub trait FMPClientTrait {
-    async fn get_details(&self, ticker: &str, rate_map: &HashMap<String, f64>) -> Result<Details>;
-    async fn get_historical_market_cap(&self, ticker: &str, date: &DateTime<Utc>) -> Result<HistoricalMarketCap>;
+    async fn get_details(&self, ticker: &str, rate_map: &HashMap<String, f64>) -> Result<Option<Details>>;
+    async fn get_historical_market_cap(&self, ticker: &str, date: &DateTime<Utc>) -> Result<Option<f64>>;
     async fn get_ratios(&self, ticker: &str) -> Result<Option<FMPRatios>>;
     async fn get_income_statement(&self, ticker: &str) -> Result<Option<FMPIncomeStatement>>;
     async fn get_exchange_rates(&self) -> Result<Vec<ExchangeRate>>;
@@ -41,104 +41,7 @@ pub struct FMPClient {
 
 #[async_trait::async_trait]
 impl FMPClientTrait for FMPClient {
-    async fn get_details(&self, ticker: &str, rate_map: &HashMap<String, f64>) -> Result<Details> {
-        self.get_details(ticker, rate_map).await
-    }
-
-    async fn get_historical_market_cap(&self, ticker: &str, date: &DateTime<Utc>) -> Result<HistoricalMarketCap> {
-        self.get_historical_market_cap(ticker, date).await
-    }
-
-    async fn get_ratios(&self, ticker: &str) -> Result<Option<FMPRatios>> {
-        self.get_ratios(ticker).await
-    }
-
-    async fn get_income_statement(&self, ticker: &str) -> Result<Option<FMPIncomeStatement>> {
-        self.get_income_statement(ticker).await
-    }
-
-    async fn get_exchange_rates(&self) -> Result<Vec<ExchangeRate>> {
-        self.get_exchange_rates().await
-    }
-}
-
-impl FMPClient {
-    pub fn new(api_key: String) -> Self {
-        // Allow up to 300 concurrent requests per minute
-        let rate_limiter = Arc::new(Semaphore::new(300));
-
-        Self {
-            client: Client::new(),
-            api_key,
-            rate_limiter,
-        }
-    }
-
-    async fn make_request<T: for<'de> Deserialize<'de>>(&self, url: String) -> Result<T> {
-        let mut retries = 0;
-        let max_retries = 3;
-        let mut delay = Duration::from_secs(5);
-
-        loop {
-            // Wait for rate limit permit
-            let _permit = self.rate_limiter.acquire().await.unwrap();
-
-            let response = self
-                .client
-                .get(&url)
-                .send()
-                .await
-                .context("Failed to send request")?;
-
-            // Get the response text first to log in case of error
-            let text = response
-                .text()
-                .await
-                .context("Failed to get response text")?;
-
-            // Check for rate limit error
-            if text.contains("Limit Reach") {
-                if retries >= max_retries {
-                    return Err(anyhow::anyhow!(
-                        "Rate limit reached after {} retries",
-                        max_retries
-                    ));
-                }
-                eprintln!(
-                    "Rate limit hit for {}. Retrying in {} seconds...",
-                    url,
-                    delay.as_secs()
-                );
-                sleep(delay).await;
-                delay *= 2; // Exponential backoff
-                retries += 1;
-                continue;
-            }
-
-            match serde_json::from_str::<T>(&text) {
-                Ok(result) => {
-                    // Schedule permit release after 200ms
-                    let rate_limiter = self.rate_limiter.clone();
-                    tokio::spawn(async move {
-                        sleep(Duration::from_millis(200)).await;
-                        rate_limiter.add_permits(1);
-                    });
-                    return Ok(result);
-                }
-                Err(e) => {
-                    eprintln!("Failed to parse response for URL {}: {}", url, e);
-                    eprintln!("Response text: {}", text);
-                    return Err(anyhow::anyhow!("Failed to parse response: {}", e));
-                }
-            }
-        }
-    }
-
-    pub async fn get_details(
-        &self,
-        ticker: &str,
-        rate_map: &HashMap<String, f64>,
-    ) -> Result<Details> {
+    async fn get_details(&self, ticker: &str, rate_map: &HashMap<String, f64>) -> Result<Option<Details>> {
         if ticker.is_empty() {
             anyhow::bail!("ticker empty");
         }
@@ -218,14 +121,10 @@ impl FMPClient {
             details.revenue_usd = Some(convert_currency(rev, currency, "USD", rate_map));
         }
 
-        Ok(details)
+        Ok(Some(details))
     }
 
-    pub async fn get_historical_market_cap(
-        &self,
-        ticker: &str,
-        date: &DateTime<Utc>,
-    ) -> Result<HistoricalMarketCap> {
+    async fn get_historical_market_cap(&self, ticker: &str, date: &DateTime<Utc>) -> Result<Option<f64>> {
         let url = format!(
             "https://financialmodelingprep.com/api/v3/historical-market-capitalization/{}?from={}&to={}&apikey={}",
             ticker,
@@ -238,34 +137,13 @@ impl FMPClient {
 
         if let Some(data) = response.first() {
             let market_cap = data["marketCap"].as_f64().unwrap_or(0.0);
-            let price = data["price"].as_f64().unwrap_or(0.0);
-
-            // Get company profile for additional info
-            let profile_url = format!(
-                "https://financialmodelingprep.com/api/v3/profile/{}?apikey={}",
-                ticker, self.api_key
-            );
-            let profiles: Vec<FMPCompanyProfile> = self.make_request(profile_url).await?;
-
-            if let Some(profile) = profiles.first() {
-                Ok(HistoricalMarketCap {
-                    ticker: ticker.to_string(),
-                    name: profile.company_name.clone(),
-                    market_cap_original: market_cap,
-                    original_currency: "USD".to_string(), // FMP returns USD by default
-                    exchange: profile.exchange.clone(),
-                    price,
-                })
-            } else {
-                anyhow::bail!("No company profile found for ticker {}", ticker)
-            }
+            Ok(Some(market_cap))
         } else {
-            anyhow::bail!("No historical market cap data found for ticker {}", ticker)
+            Ok(None)
         }
     }
 
-    #[allow(dead_code)]
-    pub async fn get_ratios(&self, ticker: &str) -> Result<Option<FMPRatios>> {
+    async fn get_ratios(&self, ticker: &str) -> Result<Option<FMPRatios>> {
         if ticker.is_empty() {
             anyhow::bail!("ticker empty");
         }
@@ -299,8 +177,7 @@ impl FMPClient {
         Ok(ratios.into_iter().next())
     }
 
-    #[allow(dead_code)]
-    pub async fn get_income_statement(&self, ticker: &str) -> Result<Option<FMPIncomeStatement>> {
+    async fn get_income_statement(&self, ticker: &str) -> Result<Option<FMPIncomeStatement>> {
         if ticker.is_empty() {
             anyhow::bail!("ticker empty");
         }
@@ -334,7 +211,7 @@ impl FMPClient {
         Ok(statements.into_iter().next())
     }
 
-    pub async fn get_exchange_rates(&self) -> Result<Vec<ExchangeRate>> {
+    async fn get_exchange_rates(&self) -> Result<Vec<ExchangeRate>> {
         let url = format!(
             "https://financialmodelingprep.com/api/v3/quotes/forex?apikey={}",
             self.api_key
@@ -356,6 +233,79 @@ impl FMPClient {
             .await
             .context("Failed to parse forex rates response")?;
         Ok(rates)
+    }
+}
+
+impl FMPClient {
+    pub fn new(api_key: String) -> Self {
+        // Allow up to 300 concurrent requests per minute
+        let rate_limiter = Arc::new(Semaphore::new(300));
+
+        Self {
+            client: Client::new(),
+            api_key,
+            rate_limiter,
+        }
+    }
+
+    async fn make_request<T: for<'de> Deserialize<'de>>(&self, url: String) -> Result<T> {
+        let mut retries = 0;
+        let max_retries = 3;
+        let mut delay = Duration::from_secs(5);
+
+        loop {
+            // Wait for rate limit permit
+            let _permit = self.rate_limiter.acquire().await.unwrap();
+
+            let response = self
+                .client
+                .get(&url)
+                .send()
+                .await
+                .context("Failed to send request")?;
+
+            // Get the response text first to log in case of error
+            let text = response
+                .text()
+                .await
+                .context("Failed to get response text")?;
+
+            // Check for rate limit error
+            if text.contains("Limit Reach") {
+                if retries >= max_retries {
+                    return Err(anyhow::anyhow!(
+                        "Rate limit reached after {} retries",
+                        max_retries
+                    ));
+                }
+                eprintln!(
+                    "Rate limit hit for {}. Retrying in {} seconds...",
+                    url,
+                    delay.as_secs()
+                );
+                sleep(delay).await;
+                delay *= 2; // Exponential backoff
+                retries += 1;
+                continue;
+            }
+
+            match serde_json::from_str::<T>(&text) {
+                Ok(result) => {
+                    // Schedule permit release after 200ms
+                    let rate_limiter = self.rate_limiter.clone();
+                    tokio::spawn(async move {
+                        sleep(Duration::from_millis(200)).await;
+                        rate_limiter.add_permits(1);
+                    });
+                    return Ok(result);
+                }
+                Err(e) => {
+                    eprintln!("Failed to parse response for URL {}: {}", url, e);
+                    eprintln!("Response text: {}", text);
+                    return Err(anyhow::anyhow!("Failed to parse response: {}", e));
+                }
+            }
+        }
     }
 }
 
@@ -412,7 +362,7 @@ pub async fn get_details_eu(ticker: &str, rate_map: &HashMap<String, f64>) -> Re
     let api_key = env::var("FINANCIALMODELINGPREP_API_KEY")
         .expect("FINANCIALMODELINGPREP_API_KEY must be set");
     let client = FMPClient::new(api_key);
-    client.get_details(ticker, rate_map).await
+    client.get_details(ticker, rate_map).await?.ok_or_else(|| anyhow::anyhow!("No details found for ticker {}", ticker))
 }
 
 #[derive(Debug, Deserialize)]

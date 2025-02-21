@@ -6,6 +6,7 @@ use anyhow::Result;
 use sqlx::sqlite::SqlitePool;
 use std::collections::HashMap;
 use crate::api::FMPClient;
+use crate::api::FMPClientTrait;
 
 /// Insert a currency into the database
 pub async fn insert_currency(pool: &SqlitePool, code: &str, name: &str) -> Result<()> {
