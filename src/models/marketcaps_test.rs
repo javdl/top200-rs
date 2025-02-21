@@ -2,6 +2,8 @@ use super::*;
 use crate::db;
 use std::collections::HashMap;
 use serde_json::json;
+use std::fs;
+use csv::Reader;
 
 #[tokio::test]
 async fn test_market_caps_operations() -> Result<()> {
@@ -57,6 +59,57 @@ async fn test_market_caps_operations() -> Result<()> {
     // Test exporting market caps
     export_market_caps(&pool).await?;
     export_top_100_active(&pool).await?;
+
+    // Get the latest output file
+    let output_dir = std::path::Path::new("output");
+    let latest_file = fs::read_dir(output_dir)?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry.path().to_string_lossy().contains("top_100_active_")
+                && entry.path().extension().map_or(false, |ext| ext == "csv")
+        })
+        .max_by_key(|entry| entry.metadata().unwrap().modified().unwrap())
+        .expect("No output file found");
+
+    // Read and validate the CSV file
+    let mut rdr = Reader::from_path(latest_file.path())?;
+    let headers = rdr.headers()?.clone();
+    
+    // Check required headers
+    let required_headers = vec![
+        "Symbol", "Ticker", "Name", "Market Cap (Original)", "Original Currency",
+        "Market Cap (EUR)", "Market Cap (USD)", "Exchange", "Active", "Description",
+        "Homepage URL", "Employees", "Timestamp"
+    ];
+    
+    for header in required_headers {
+        assert!(headers.iter().any(|h| h == header), "Missing header: {}", header);
+    }
+
+    // Validate data types and values in each row
+    for result in rdr.records() {
+        let record = result?;
+        
+        // Check Symbol and Ticker match
+        assert_eq!(record.get(0).unwrap(), record.get(1).unwrap(), "Symbol should match Ticker");
+        
+        // Check Market Cap values are numeric and positive
+        let original_mc: f64 = record.get(3).unwrap().parse()?;
+        let eur_mc: f64 = record.get(5).unwrap().parse()?;
+        let usd_mc: f64 = record.get(6).unwrap().parse()?;
+        assert!(original_mc > 0.0, "Market Cap (Original) should be positive");
+        assert!(eur_mc > 0.0, "Market Cap (EUR) should be positive");
+        assert!(usd_mc > 0.0, "Market Cap (USD) should be positive");
+        
+        // Check Active is boolean
+        assert!(record.get(8).unwrap() == "true" || record.get(8).unwrap() == "false", 
+            "Active should be boolean");
+        
+        // Check Homepage URL format
+        let url = record.get(10).unwrap();
+        assert!(url.starts_with("http://") || url.starts_with("https://"), 
+            "Homepage URL should start with http:// or https://");
+    }
 
     Ok(())
 }
