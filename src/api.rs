@@ -20,8 +20,16 @@ use mockall::automock;
 
 #[async_trait::async_trait]
 pub trait FMPClientTrait {
-    async fn get_details(&self, ticker: &str, rate_map: &HashMap<String, f64>) -> Result<Option<Details>>;
-    async fn get_historical_market_cap(&self, ticker: &str, date: &DateTime<Utc>) -> Result<Option<f64>>;
+    async fn get_details(
+        &self,
+        ticker: &str,
+        rate_map: &HashMap<String, f64>,
+    ) -> Result<Option<Details>>;
+    async fn get_historical_market_cap(
+        &self,
+        ticker: &str,
+        date: &DateTime<Utc>,
+    ) -> Result<Option<f64>>;
     async fn get_ratios(&self, ticker: &str) -> Result<Option<FMPRatios>>;
     async fn get_income_statement(&self, ticker: &str) -> Result<Option<FMPIncomeStatement>>;
     async fn get_exchange_rates(&self) -> Result<Vec<ExchangeRate>>;
@@ -41,7 +49,11 @@ pub struct FMPClient {
 
 #[async_trait::async_trait]
 impl FMPClientTrait for FMPClient {
-    async fn get_details(&self, ticker: &str, rate_map: &HashMap<String, f64>) -> Result<Option<Details>> {
+    async fn get_details(
+        &self,
+        ticker: &str,
+        rate_map: &HashMap<String, f64>,
+    ) -> Result<Option<Details>> {
         if ticker.is_empty() {
             anyhow::bail!("ticker empty");
         }
@@ -124,7 +136,11 @@ impl FMPClientTrait for FMPClient {
         Ok(Some(details))
     }
 
-    async fn get_historical_market_cap(&self, ticker: &str, date: &DateTime<Utc>) -> Result<Option<f64>> {
+    async fn get_historical_market_cap(
+        &self,
+        ticker: &str,
+        date: &DateTime<Utc>,
+    ) -> Result<Option<f64>> {
         let url = format!(
             "https://financialmodelingprep.com/api/v3/historical-market-capitalization/{}?from={}&to={}&apikey={}",
             ticker,
@@ -362,7 +378,10 @@ pub async fn get_details_eu(ticker: &str, rate_map: &HashMap<String, f64>) -> Re
     let api_key = env::var("FINANCIALMODELINGPREP_API_KEY")
         .expect("FINANCIALMODELINGPREP_API_KEY must be set");
     let client = FMPClient::new(api_key);
-    client.get_details(ticker, rate_map).await?.ok_or_else(|| anyhow::anyhow!("No details found for ticker {}", ticker))
+    client
+        .get_details(ticker, rate_map)
+        .await?
+        .ok_or_else(|| anyhow::anyhow!("No details found for ticker {}", ticker))
 }
 
 #[derive(Debug, Deserialize)]

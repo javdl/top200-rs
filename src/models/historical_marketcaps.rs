@@ -2,10 +2,10 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-only
 
+use super::currencies::{convert_currency, get_rate_map_from_db};
 use crate::api;
 use crate::api::FMPClientTrait;
 use crate::config;
-use super::currencies::{convert_currency, get_rate_map_from_db};
 use anyhow::Result;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use sqlx::sqlite::SqlitePool;
@@ -44,7 +44,10 @@ pub async fn fetch_historical_marketcaps(
             {
                 Some(market_cap) => market_cap,
                 None => {
-                    eprintln!("No market cap data found for {} at {}", ticker, datetime_utc);
+                    eprintln!(
+                        "No market cap data found for {} at {}",
+                        ticker, datetime_utc
+                    );
                     continue;
                 }
             };
@@ -60,26 +63,18 @@ pub async fn fetch_historical_marketcaps(
 
             // Convert currencies if needed
             let currency = details.currency_symbol.clone().unwrap_or_default();
-            let market_cap_eur = convert_currency(
-                market_cap,
-                &currency,
-                "EUR",
-                &rate_map,
-            );
+            let market_cap_eur = convert_currency(market_cap, &currency, "EUR", &rate_map);
 
-            let market_cap_usd = convert_currency(
-                market_cap,
-                &currency,
-                "USD",
-                &rate_map,
-            );
+            let market_cap_usd = convert_currency(market_cap, &currency, "USD", &rate_map);
 
             // Store the Unix timestamp of the historical date
             let timestamp = naive_dt.and_utc().timestamp();
 
             // Extract values before the query
             let name = details.name.clone().unwrap_or_default();
-            let exchange = details.extra.get("exchange")
+            let exchange = details
+                .extra
+                .get("exchange")
                 .and_then(|v| v.as_str())
                 .unwrap_or_default()
                 .to_string();

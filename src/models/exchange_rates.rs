@@ -1,6 +1,6 @@
+use super::currencies::insert_forex_rate;
 use crate::api::FMPClient;
 use crate::api::FMPClientTrait;
-use super::currencies::insert_forex_rate;
 use anyhow::Result;
 use chrono::Local;
 use csv::Writer;
@@ -91,16 +91,20 @@ pub async fn export_exchange_rates_csv(fmp_client: &FMPClient, pool: &SqlitePool
                 &price.to_string().as_str(),
                 &rate
                     .changes_percentage
-                    .map_or_else(|| "".to_string(), |v| v.to_string()).as_str(),
+                    .map_or_else(|| "".to_string(), |v| v.to_string())
+                    .as_str(),
                 &rate
                     .change
-                    .map_or_else(|| "".to_string(), |v| v.to_string()).as_str(),
+                    .map_or_else(|| "".to_string(), |v| v.to_string())
+                    .as_str(),
                 &rate
                     .day_low
-                    .map_or_else(|| "".to_string(), |v| v.to_string()).as_str(),
+                    .map_or_else(|| "".to_string(), |v| v.to_string())
+                    .as_str(),
                 &rate
                     .day_high
-                    .map_or_else(|| "".to_string(), |v| v.to_string()).as_str(),
+                    .map_or_else(|| "".to_string(), |v| v.to_string())
+                    .as_str(),
                 base,
                 quote,
                 &timestamp.to_string().as_str(),

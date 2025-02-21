@@ -10,13 +10,13 @@ mod details_us_polygon;
 mod models;
 mod utils;
 
+use anyhow::Result;
+use clap::{Parser, Subcommand};
 use models::currencies;
 use models::exchange_rates;
 use models::historical_marketcaps;
 use models::marketcaps;
 use models::ticker_details;
-use anyhow::Result;
-use clap::{Parser, Subcommand};
 // use sqlx::sqlite::SqlitePool;
 use std::env;
 use tokio;
@@ -59,7 +59,11 @@ enum Commands {
     /// List ticker details
     ListTickerDetails,
     /// Get forex rates
-    GetForexRates { symbol: String, start_timestamp: i64, end_timestamp: i64 },
+    GetForexRates {
+        symbol: String,
+        start_timestamp: i64,
+        end_timestamp: i64,
+    },
 }
 
 #[tokio::main]
@@ -97,7 +101,7 @@ async fn main() -> Result<()> {
             let fmp_client = api::FMPClient::new(api_key);
             currencies::update_currencies(&fmp_client, &pool).await?;
             println!("✅ Currencies updated from FMP API");
-            
+
             // Also add the manually specified currency
             currencies::insert_currency(&pool, &code, &name).await?;
             println!("✅ Added currency: {} ({})", name, code);
@@ -133,10 +137,18 @@ async fn main() -> Result<()> {
                 println!("{:?}", detail);
             }
         }
-        Some(Commands::GetForexRates { symbol, start_timestamp, end_timestamp }) => {
-            let rates = currencies::get_forex_rates(&pool, &symbol, start_timestamp, end_timestamp).await?;
+        Some(Commands::GetForexRates {
+            symbol,
+            start_timestamp,
+            end_timestamp,
+        }) => {
+            let rates =
+                currencies::get_forex_rates(&pool, &symbol, start_timestamp, end_timestamp).await?;
             for (ask, bid, timestamp) in rates {
-                println!("Symbol: {}, Ask: {}, Bid: {}, Timestamp: {}", symbol, ask, bid, timestamp);
+                println!(
+                    "Symbol: {}, Ask: {}, Bid: {}, Timestamp: {}",
+                    symbol, ask, bid, timestamp
+                );
             }
         }
         None => {
