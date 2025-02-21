@@ -11,7 +11,7 @@ mod details_us_polygon;
 mod exchange_rates;
 mod historical_marketcaps;
 mod marketcaps;
-mod models;
+mod models_new as models;
 mod ticker_details;
 mod utils;
 
