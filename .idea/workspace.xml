@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="ALL" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="f53462a1-ec57-4da1-af81-5ddcc4bbf723" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/src/api.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/api.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/details_eu_fmp.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/details_eu_fmp.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/currencies.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/currencies.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/exchange_rates.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/exchange_rates.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/historical_marketcaps.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/historical_marketcaps.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/marketcaps.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/marketcaps.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/mod.rs" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="T17KPeCi" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="2tM3L2Pep8rFjxtzSkFMUDdyzZy" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.rust.reset.selective.auto.import": "true",
+    "git-widget-placeholder": "axum",
+    "last_opened_file_path": "/Volumes/DATAext/git/top200-rs",
+    "nodejs_package_manager_path": "npm",
+    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
+    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
+    "org.rust.first.attach.projects": "true",
+    "settings.editor.selected.configurable": "com.github.copilot.settings.ApplicationConfigurable",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="f53462a1-ec57-4da1-af81-5ddcc4bbf723" name="Changes" comment="" />
+      <created>1740148057061</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1740148057061</updated>
+      <workItem from="1740148058546" duration="94000" />
+      <workItem from="1740148162792" duration="44000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>
