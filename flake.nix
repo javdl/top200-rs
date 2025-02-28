@@ -56,18 +56,6 @@
             # we refer to an existing derivation here
             inputsFrom = [ bin ];
             buildInputs = with pkgs; [ reuse clippy-sarif sarif-fmt sqlite sqlx-cli ];
-          # buildInputs = with pkgs; [
-          #   # Rust toolchain
-          #   rustToolchain
-
-          #   # Additional dependencies
-          #   pkg-config
-          #   openssl
-          #   trunk
-
-          #   # SQLite for database
-          #   sqlite
-          # ];
 
           # Environment variables
           shellHook = ''
