@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-only
 
-use tokio_postgres::{Client, Error as PgError, NoTls};
 use refinery::Error as RefineryError;
+use tokio_postgres::{Client, Error as PgError, NoTls};
 
 // Module to embed SQL migration files
 mod embedded_migrations {
@@ -39,7 +39,9 @@ pub async fn connect() -> Result<Client, PgError> {
 /// * `client` - A mutable reference to a `tokio_postgres::Client`.
 pub async fn run_migrations(client: &mut Client) -> Result<(), RefineryError> {
     println!("Applying database migrations...");
-    embedded_migrations::migrations::runner().run_async(client).await?;
+    embedded_migrations::migrations::runner()
+        .run_async(client)
+        .await?;
     println!("Database migrations applied successfully.");
     Ok(())
 }

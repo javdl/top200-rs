@@ -7,9 +7,9 @@ use crate::currencies::get_rate_map_from_db;
 use anyhow::Result;
 use chrono::Local;
 use csv::Writer;
-use tokio_postgres::Client; // Changed from sqlx::sqlite::SqlitePool
 use std::path::PathBuf;
 use tokio;
+use tokio_postgres::Client; // Changed from sqlx::sqlite::SqlitePool
 
 pub async fn export_details_eu_csv(client: &Client) -> Result<()> {
     let config = config::load_config()?;
@@ -115,24 +115,24 @@ pub async fn export_details_eu_csv(client: &Client) -> Result<()> {
                 // Write empty row for failed ticker, but include ticker and error
                 let error_msg = format!("Error: {}", e);
                 writer.write_record(&[
-                    &ticker, // Ticker
-                    "",      // Company Name
-                    "",      // Market Cap
-                    "",      // Currency
-                    "",      // Exchange
-                    "",      // Price
-                    "",      // Active
+                    &ticker,    // Ticker
+                    "",         // Company Name
+                    "",         // Market Cap
+                    "",         // Currency
+                    "",         // Exchange
+                    "",         // Price
+                    "",         // Active
                     &error_msg, // Description (used for error)
-                    "",      // Homepage URL
-                    "",      // Employees
-                    "",      // Revenue
-                    "",      // Revenue (USD)
-                    "",      // Working Capital Ratio
-                    "",      // Quick Ratio
-                    "",      // EPS
-                    "",      // P/E Ratio
-                    "",      // D/E Ratio
-                    "",      // ROE
+                    "",         // Homepage URL
+                    "",         // Employees
+                    "",         // Revenue
+                    "",         // Revenue (USD)
+                    "",         // Working Capital Ratio
+                    "",         // Quick Ratio
+                    "",         // EPS
+                    "",         // P/E Ratio
+                    "",         // D/E Ratio
+                    "",         // ROE
                 ])?;
             }
         }

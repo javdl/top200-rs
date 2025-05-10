@@ -7,8 +7,8 @@ use crate::config;
 use crate::currencies::{convert_currency, get_rate_map_from_db};
 use anyhow::Result;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-use tokio_postgres::Client; // Added
 use std::sync::Arc;
+use tokio_postgres::Client; // Added
 
 pub async fn fetch_historical_marketcaps(
     client: &mut Client,
@@ -102,7 +102,7 @@ pub async fn fetch_historical_marketcaps(
                                 &(market_cap_usd as i64),
                                 &market_cap.exchange,
                                 &market_cap.price,
-                                &true, // active
+                                &true,      // active
                                 &timestamp, // api_timestamp
                             ],
                         )

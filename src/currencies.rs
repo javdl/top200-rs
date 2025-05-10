@@ -183,7 +183,8 @@ pub async fn insert_forex_rate(
 pub async fn get_latest_forex_rate(
     client: &Client,
     symbol: &str,
-) -> Result<Option<(f64, f64, i64)>> { // Returns (ask, bid, api_timestamp)
+) -> Result<Option<(f64, f64, i64)>> {
+    // Returns (ask, bid, api_timestamp)
     let row_opt = client
         .query_opt(
             r#"

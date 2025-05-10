@@ -11,9 +11,9 @@ use anyhow::Result;
 use chrono::Local;
 use csv::Writer;
 use indicatif::{ProgressBar, ProgressStyle};
-use tokio_postgres::Client;
 use std::collections::HashMap;
 use std::sync::Arc;
+use tokio_postgres::Client;
 
 /// Store market cap data in the database
 async fn store_market_cap(
@@ -66,8 +66,8 @@ async fn store_market_cap(
                 &name,
                 &(original_market_cap as i64), // Cast to i64 for DB
                 &currency,
-                &(eur_market_cap as i64),    // Cast to i64 for DB
-                &(usd_market_cap as i64),    // Cast to i64 for DB
+                &(eur_market_cap as i64), // Cast to i64 for DB
+                &(usd_market_cap as i64), // Cast to i64 for DB
                 &exchange_val,
                 &active,
                 &api_timestamp_val,
@@ -127,16 +127,29 @@ async fn get_market_caps(client: &Client) -> Result<Vec<(f64, Vec<String>)>> {
             row.try_get("ticker").unwrap_or_else(|_| String::new()), // Symbol
             row.try_get("ticker").unwrap_or_else(|_| String::new()), // Ticker
             row.try_get("name").unwrap_or_else(|_| String::new()),   // Name
-            row.try_get::<_, Option<i64>>("market_cap_original")?.map(|val| val.to_string()).unwrap_or_default(),
-            row.try_get::<_, Option<String>>("original_currency")?.unwrap_or_default(),
+            row.try_get::<_, Option<i64>>("market_cap_original")?
+                .map(|val| val.to_string())
+                .unwrap_or_default(),
+            row.try_get::<_, Option<String>>("original_currency")?
+                .unwrap_or_default(),
             market_cap_eur_val.to_string(),
-            row.try_get::<_, Option<i64>>("market_cap_usd")?.map(|val| val.to_string()).unwrap_or_default(),
-            row.try_get::<_, Option<String>>("exchange")?.unwrap_or_default(),
-            row.try_get::<_, Option<bool>>("active")?.map(|val| val.to_string()).unwrap_or_default(),
-            row.try_get::<_, Option<String>>("description")?.unwrap_or_default(),
-            row.try_get::<_, Option<String>>("homepage_url")?.unwrap_or_default(),
-            row.try_get::<_, Option<String>>("employees")?.unwrap_or_default(),
-            row.try_get::<_, Option<i64>>("api_timestamp")?.map(|val| val.to_string()).unwrap_or_default(),
+            row.try_get::<_, Option<i64>>("market_cap_usd")?
+                .map(|val| val.to_string())
+                .unwrap_or_default(),
+            row.try_get::<_, Option<String>>("exchange")?
+                .unwrap_or_default(),
+            row.try_get::<_, Option<bool>>("active")?
+                .map(|val| val.to_string())
+                .unwrap_or_default(),
+            row.try_get::<_, Option<String>>("description")?
+                .unwrap_or_default(),
+            row.try_get::<_, Option<String>>("homepage_url")?
+                .unwrap_or_default(),
+            row.try_get::<_, Option<String>>("employees")?
+                .unwrap_or_default(),
+            row.try_get::<_, Option<i64>>("api_timestamp")?
+                .map(|val| val.to_string())
+                .unwrap_or_default(),
         ];
         results.push((market_cap_eur_val as f64, record_vec));
     }
@@ -176,13 +189,17 @@ async fn update_market_caps(client: &mut Client) -> Result<()> {
     );
 
     // Update market cap data in database
-    println!("Updating market cap data in database for {} tickers...", total_tickers);
+    println!(
+        "Updating market cap data in database for {} tickers...",
+        total_tickers
+    );
     let mut failed_tickers_info = Vec::new(); // Renamed for clarity
-    // NOTE: The original code iterates sequentially.
-    // If fmp_client.get_details is long-running per ticker,
-    // consider using tokio::spawn for concurrency here, similar to details_eu_fmp.rs.
-    // For now, maintaining sequential iteration to match original logic.
-    for ticker_str in &tickers { // Renamed for clarity
+                                              // NOTE: The original code iterates sequentially.
+                                              // If fmp_client.get_details is long-running per ticker,
+                                              // consider using tokio::spawn for concurrency here, similar to details_eu_fmp.rs.
+                                              // For now, maintaining sequential iteration to match original logic.
+    for ticker_str in &tickers {
+        // Renamed for clarity
         let rate_map_ref = Arc::clone(&rate_map_arc); // Use Arc for rate_map
         let fmp_client_ref = Arc::clone(&fmp_client); // Use Arc for fmp_client
 
@@ -190,14 +207,18 @@ async fn update_market_caps(client: &mut Client) -> Result<()> {
         match fmp_client_ref.get_details(ticker_str, &rate_map_ref).await {
             Ok(details) => {
                 // store_market_cap now takes &mut Client
-                if let Err(e) = store_market_cap(client, &details, &rate_map_ref, current_api_timestamp).await {
+                if let Err(e) =
+                    store_market_cap(client, &details, &rate_map_ref, current_api_timestamp).await
+                {
                     eprintln!("Failed to store market cap for {}: {}", ticker_str, e);
-                    failed_tickers_info.push((ticker_str.to_string(), format!("Failed to store: {}", e)));
+                    failed_tickers_info
+                        .push((ticker_str.to_string(), format!("Failed to store: {}", e)));
                 }
             }
             Err(e) => {
                 eprintln!("Failed to fetch details for {}: {}", ticker_str, e);
-                failed_tickers_info.push((ticker_str.to_string(), format!("Failed to fetch: {}", e)));
+                failed_tickers_info
+                    .push((ticker_str.to_string(), format!("Failed to fetch: {}", e)));
             }
         }
         progress.inc(1);

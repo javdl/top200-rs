@@ -61,10 +61,14 @@ async fn main() -> Result<()> {
 
     // Establish PostgreSQL connection
     // Note: db::connect() reads POSTGRES_URL_NON_POOLING internally and panics if not set.
-    let mut client = db::connect().await.expect("Failed to connect to PostgreSQL");
+    let mut client = db::connect()
+        .await
+        .expect("Failed to connect to PostgreSQL");
 
     // Apply database migrations
-    db::run_migrations(&mut client).await.expect("Failed to run database migrations");
+    db::run_migrations(&mut client)
+        .await
+        .expect("Failed to run database migrations");
 
     // The `client` variable (type tokio_postgres::Client) now replaces the old `pool`.
     // All functions below that used `&pool` will need to be refactored
@@ -90,14 +94,17 @@ async fn main() -> Result<()> {
             start_year,
             end_year,
         }) => {
-            historical_marketcaps::fetch_historical_marketcaps(&mut client, start_year, end_year).await?;
+            historical_marketcaps::fetch_historical_marketcaps(&mut client, start_year, end_year)
+                .await?;
         }
         Some(Commands::FetchMonthlyHistoricalMarketCaps {
             start_year,
             end_year,
         }) => {
             monthly_historical_marketcaps::fetch_monthly_historical_marketcaps(
-                &mut client, start_year, end_year,
+                &mut client,
+                start_year,
+                end_year,
             )
             .await?;
         }

@@ -7,8 +7,8 @@ use crate::config;
 use crate::currencies::{convert_currency, get_rate_map_from_db};
 use anyhow::Result;
 use chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Utc};
-use tokio_postgres::Client; // Changed from sqlx::sqlite::SqlitePool
 use std::sync::Arc;
+use tokio_postgres::Client; // Changed from sqlx::sqlite::SqlitePool
 
 /// Fetches historical market caps for the last day of each month within the specified year range
 pub async fn fetch_monthly_historical_marketcaps(
@@ -47,7 +47,10 @@ pub async fn fetch_monthly_historical_marketcaps(
             let rate_map = get_rate_map_from_db(client).await?; // Changed
 
             for ticker in &tickers {
-                println!("Fetching monthly historical for {} on {}...", ticker, last_day);
+                println!(
+                    "Fetching monthly historical for {} on {}...",
+                    ticker, last_day
+                );
                 match fmp_client
                     .get_historical_market_cap(ticker, &datetime_utc)
                     .await
@@ -55,7 +58,7 @@ pub async fn fetch_monthly_historical_marketcaps(
                     Ok(historical_data) => {
                         let market_cap_original = historical_data.market_cap_original;
                         let original_currency = &historical_data.original_currency;
-                        
+
                         let market_cap_eur = convert_currency(
                             market_cap_original,
                             original_currency,
@@ -114,13 +117,16 @@ pub async fn fetch_monthly_historical_marketcaps(
 
                         println!(
                             "✅ Added monthly historical market cap for {} on {}",
-                            ticker, naive_dt.date()
+                            ticker,
+                            naive_dt.date()
                         );
                     }
                     Err(e) => {
                         eprintln!(
                             "❌ Failed to fetch monthly market cap for {} on {}: {}",
-                            ticker, naive_dt.date(), e
+                            ticker,
+                            naive_dt.date(),
+                            e
                         );
                     }
                 }
