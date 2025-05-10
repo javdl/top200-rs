@@ -153,3 +153,12 @@ After making code changes, always run the Rust formatter to ensure code style co
 # Format all code in the project (run from within nix develop)
 nix develop --command cargo fmt --all
 ```
+
+### Dependency and License Checks
+
+After making changes, especially to dependencies, run `cargo-deny` to check for issues:
+
+```bash
+# Run cargo-deny checks (run from within nix develop)
+nix develop --command cargo deny check
+```
