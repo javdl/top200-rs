@@ -21,10 +21,12 @@ plotters = "0.3.5"
 confy = "0.5.1"
 toml = "0.8.8"
 indicatif = "0.17.8"
+native-tls = "0.2.11"                                                   # For tokio-postgres TLS support
 futures = "0.3"
 clap = { version = "4.5.1", features = ["derive"] }
 glob = "0.3.1"
-tokio-postgres = { version = "0.7.10", features = ["with-chrono-0_4"] }
+tokio-postgres = { version = "0.7.13", features = ["with-chrono-0_4"] }
+postgres-native-tls = "0.5.1"
 refinery = { version = "0.8.10", features = ["tokio-postgres"] }
 refinery-macros = "0.8.10"
 

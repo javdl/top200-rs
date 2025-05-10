@@ -60,15 +60,16 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     // Establish PostgreSQL connection
-    // Note: db::connect() reads POSTGRES_URL_NON_POOLING internally and panics if not set.
-    let mut client = db::connect()
-        .await
-        .expect("Failed to connect to PostgreSQL");
+    let mut client = db::connect().await.map_err(|e| {
+        eprintln!("Database connection setup failed: {}", e);
+        anyhow::anyhow!("Failed to connect to PostgreSQL. Caused by: {}", e)
+    })?;
 
     // Apply database migrations
-    db::run_migrations(&mut client)
-        .await
-        .expect("Failed to run database migrations");
+    db::run_migrations(&mut client).await.map_err(|e| {
+        eprintln!("Database migration failed: {}", e);
+        anyhow::anyhow!("Failed to run database migrations. Caused by: {}", e)
+    })?;
 
     // The `client` variable (type tokio_postgres::Client) now replaces the old `pool`.
     // All functions below that used `&pool` will need to be refactored
