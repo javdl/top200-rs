@@ -1,428 +1,277 @@
-# SendPro API Documentation
+# Brevo SendTransacEmail API Documentation
+
+https://developers.brevo.com/reference/sendtransacemail
 
 ## Overview
 
-The SendPro API by Flowmailer provides a reliable email API for sending and managing email messages.
+The SendTransacEmail API endpoint allows you to send transactional emails through Brevo (formerly Sendinblue). This endpoint can be used to send emails with either custom HTML content or based on a template with dynamic parameters.
+
+## Endpoint Information
+
+- **URL**: `https://api.brevo.com/v3/smtp/email`
+- **Method**: POST
+- **Headers**:
+  - `api-key`: Your Brevo API key
+  - `content-type`: application/json
+  - `accept`: application/json
 
 ## Authentication
 
-Authentication is done using a Bearer token in the Authorization header.
+Authentication is handled via an API key which must be included in the request headers:
 
 ```
-Authorization: Bearer {access_token}
+api-key: YOUR_API_KEY
 ```
 
-## API Endpoints
+You can obtain your API key from your Brevo account settings under SMTP & API.
 
-### GET Messages
+## Request Parameters
 
-Retrieves messages with various filtering options.
+The API accepts a JSON body with the following parameters:
 
-**Request Example:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `sender` | Object | Yes | Information about the sender |
+| `to` | Array | Yes | List of recipient information |
+| `subject` | String | No* | Email subject |
+| `htmlContent` | String | No* | HTML content of the email |
+| `textContent` | String | No* | Text content of the email |
+| `templateId` | Integer | No* | ID of the template to use |
+| `params` | Object | No | Dynamic parameters for template personalization |
+| `tags` | Array | No | Tags for categorizing and tracking emails |
+| `headers` | Object | No | Custom headers for the email |
+| `replyTo` | Object | No | Reply-to address configuration |
+| `bcc` | Array | No | List of BCC recipients |
+| `cc` | Array | No | List of CC recipients |
+| `attachment` | Array | No | Files to attach to the email |
 
-```php
-<?php
-$account_id = '';
-$daterange = '2021-12-30T00:00:00Z,2021-12-31T00:00:00Z';
-$flow_ids = '';
-$addevents = false;
-$addheaders = false;
-$addonlinelink = false;
-$addtags = false;
-$sortfield = '';
-$sortorder = '';
-$range = 'items=:10';
-$options = [
-    'http' => [
-        'ignore_errors' => true,
-        'method' => 'GET',
-        'header' => [
-            sprintf('Authorization: Bearer %s', $access_token),
-            'Accept: application/vnd.flowmailer.v1.12+json',
-            sprintf('Range: %s', $range),
-        ],
-    ],
-];
-$context = stream_context_create($options);
-$matrix = ';'.http_build_query([
-    'daterange' => $daterange,
-    'flow_ids' => $flow_ids,
-], '', ';');
-$query = '?'.http_build_query([
-    'addevents' => $addevents,
-    'addheaders' => $addheaders,
-    'addonlinelink' => $addonlinelink,
-    'addtags' => $addtags,
-    'sortfield' => $sortfield,
-    'sortorder' => $sortorder,
-]);
-$response = file_get_contents(
-    sprintf(
-        'https://api.flowmailer.net/%s/messages%s%s',
-        $account_id,
-        $matrix,
-        $query
-    ),
-    false,
-    $context
-);
-$response = json_decode($response);
-$statuscode = substr($http_response_header[0], 9, 3);
+\* Either `subject` + `htmlContent`/`textContent` OR `templateId` must be provided.
+
+### Parameter Details
+
+#### Sender Object
+```json
+{
+  "name": "Sender Name",
+  "email": "sender@example.com"
+}
 ```
 
-**HTTP Request:**
-
-```
-GET /545/messages;daterange=2021-12-30T00:00:00Z,2021-12-31T00:00:00Z?addevents=true&addheaders=true&addonlinelink=true HTTP/1.1
-Host: api.flowmailer.net
-Authorization: Bearer {access_token}
-Accept: application/vnd.flowmailer.v1.12+json;charset=UTF-8
-Range: items=:10
+#### Recipient Object
+```json
+{
+  "email": "recipient@example.com",
+  "name": "Recipient Name"
+}
 ```
 
-**HTTP Response:**
-
+#### Reply-To Object
+```json
+{
+  "email": "replyto@example.com",
+  "name": "Reply-To Name"
+}
 ```
-HTTP/1.1 206 Partial Content
-Content-Range: items 94U34C1I64OJ4CPG64PJ0D1H6OO34CPI60P32C9I6CO32CPG6GO3EP9JC8PJCP9ICKSJ4PJ4C9IMCOPO6O:94V34C1I64OJ4CPG64PJ0D1J6CSJ4E1I60P32C9I6CO32CPG6GOJ4E1P65GM2P9L69IJ4PHPCKR6AP1H64/*
-Next-Range: items=94V34C1I64OJ4CPG64PJ0D1J6CSJ4E1I60P32C9I6CO32CPG6GOJ4E1P65GM2P9L69IJ4PHPCKR6AP1H64:10
-Content-Type: application/vnd.flowmailer.v1.12+json;charset=UTF-8
+
+#### Headers Object
+```json
+{
+  "X-Mailin-custom": "custom_header_1:custom_value_1|custom_header_2:custom_value_2",
+  "charset": "iso-8859-1"
+}
 ```
 
-**Response Body Example:**
+#### Params Object
+```json
+{
+  "parameter1": "value1",
+  "parameter2": "value2",
+  "ORDER": "12345",
+  "DATE": "12/06/2023"
+}
+```
 
+#### Attachment Object
 ```json
 [
   {
-    "submitted": "2021-12-30T13:04:07.000Z",
-    "id": "20211230130407e3b36e2e92fdbefc86",
-    "transactionId": "5f133c15a8de4ddca8fff9a26652b513",
-    "messageIdHeader": "<20211230130407e3b36e2e92fdbefc86@return.flowmailer.local>",
-    "messageType": "EMAIL",
-    "source": {
-      "id": "6953",
-      "description": "test source a"
-    },
-    "flow": {
-      "id": "16801",
-      "description": "test flow 1 (updated)"
-    },
-    "senderAddress": "support@flowmailer.local",
-    "recipientAddress": "richard@flowmailer.local",
-    "backendStart": "2021-12-30T13:04:13.122Z",
-    "backendDone": "2021-12-30T13:04:28.577Z",
-    "headersIn": [
-      {
-        "name": "Received",
-        "value": "from 127.0.0.1 by (Flowmailer API) with HTTP for <richard@flowmailer.local>; Thu, 30 Dec 2021 14:04:08 +0100 (CET)"
-      },
-      {
-        "name": "MIME-Version",
-        "value": "1.0"
-      },
-      {
-        "name": "From",
-        "value": "Casper Mout <casper@flowmailer.local>"
-      },
-      {
-        "name": "To",
-        "value": "Richard van Looijen <richard@flowmailer.local>"
-      },
-      {
-        "name": "X-Flow",
-        "value": "flow1"
-      },
-      {
-        "name": "Subject",
-        "value": "test message 1"
-      },
-      {
-        "name": "Content-Type",
-        "value": "text/plain; charset=UTF-8"
-      },
-      {
-        "name": "Content-Transfer-Encoding",
-        "value": "quoted-printable"
-      }
-    ],
-    "headersOut": [
-      {
-        "name": "MIME-Version",
-        "value": "1.0"
-      },
-      {
-        "name": "From",
-        "value": "Casper Mout <casper@flowmailer.local>"
-      },
-      {
-        "name": "To",
-        "value": "Richard van Looijen <richard@flowmailer.local>"
-      },
-      {
-        "name": "X-Flow",
-        "value": "flow1"
-      },
-      {
-        "name": "Subject",
-        "value": "test message 1"
-      },
-      {
-        "name": "Content-Type",
-        "value": "text/plain; charset=UTF-8"
-      },
-      {
-        "name": "Content-Transfer-Encoding",
-        "value": "quoted-printable"
-      },
-      {
-        "name": "Feedback-ID",
-        "value": "545:545-6953:545-16801:flowmailer"
-      },
-      {
-        "name": "Message-ID",
-        "value": "<20211230130407e3b36e2e92fdbefc86@return.flowmailer.local>"
-      },
-      {
-        "name": "Date",
-        "value": "Thu, 30 Dec 2021 13:04:25 +0000"
-      },
-      {
-        "name": "X-Job",
-        "value": "fm-6953-16801"
-      }
-    ],
-    "onlineLink": "https://web.flowmailer.net/viewonline.html?id=VRbzZZWMpsc:yqB0A-5zF1Nm5Ra5FC5KcA:I8SgIqmRZHC7oUQ0cOIVv8d-EjZC_GKiE6elZzbebzcluS05rh_0p2Q3WC3jRronKznxAP2D6f3X_pRx6r3W4QjKf0HJ1fhBCm9xKM3KeFX9lZe0xJiWhsYCgimBJiY2:2GnJcdfrRr9p7dKL9aU1pfg7VaqTSRCMMd-Yoo5pt9Y",
-    "status": "DELIVERED",
-    "subject": "test message 1",
-    "from": "casper@flowmailer.local",
-    "events": [
-      {
-        "id": "70844a11-30b2-467a-8bd2-bffb8992e958",
-        "messageId": "20211230130407e3b36e2e92fdbefc86",
-        "type": "DELIVERED",
-        "received": "2021-12-30T13:04:28.898Z",
-        "inserted": "2021-12-30T13:04:34.282Z",
-        "snippet": "smtp;250 Ok",
-        "mta": "[127.0.0.1] (127.0.0.1)",
-        "data": null,
-        "sourceMta": "mta.flowmailer.local"
-      },
-      {
-        "id": null,
-        "messageId": "20211230130407e3b36e2e92fdbefc86",
-        "type": "PROCESSED",
-        "received": "2021-12-30T13:04:28.577Z",
-        "inserted": "2021-12-30T13:04:16.023Z",
-        "snippet": null,
-        "mta": null,
-        "data": null
-      },
-      {
-        "id": null,
-        "messageId": "20211230130407e3b36e2e92fdbefc86",
-        "type": "SUBMITTED",
-        "received": "2021-12-30T13:04:07.000Z",
-        "inserted": "2021-12-30T13:04:16.023Z",
-        "snippet": null,
-        "mta": null,
-        "data": null
-      }
-    ],
-    "messageDetailsLink": "https://web.flowmailer.net/viewmessage.html?id=VRbzZZWMpsc:bRjmfqt7SSFksLcJGFM-7g:ftgUpVhCyQxLVZyqon1QOcpakh346CvwRYh2ct16YdjgfQzdsU0U8PBkU6jAp1ILORApJB-EU35shb1Bm65v8KtWHuEr0_Qwe7Zl2S_6MBRJkmrFqdMMj0x_1tIvTG7s:jncD05ijczY6lHquBzdTwF02KR7Bf6w0ThDCss-aQiE&code=462940c8b48fd88aff19b30863637cdee6c0bab2",
-    "fromAddress": {
-      "name": "Casper Mout",
-      "address": "casper@flowmailer.local"
-    },
-    "toAddressList": [
-      {
-        "name": "Richard van Looijen",
-        "address": "richard@flowmailer.local"
-      }
-    ]
-  },
-  {
-    "submitted": "2021-12-30T13:04:10.000Z",
-    "id": "202112301304100c7ded281d3069537b",
-    "transactionId": "4d09377e3d454dc8a69003ca8b1f0a63",
-    "messageIdHeader": "<202112301304100c7ded281d3069537b@return.flowmailer.local>",
-    "messageType": "EMAIL",
-    "source": {
-      "id": "6953",
-      "description": "test source a"
-    },
-    "flow": {
-      "id": "16814",
-      "description": "test flow 2"
-    },
-    "senderAddress": "support@flowmailer.local",
-    "recipientAddress": "richard@flowmailer.local",
-    "backendStart": "2021-12-30T13:04:28.433Z",
-    "backendDone": "2021-12-30T13:04:28.577Z",
-    "headersIn": [
-      {
-        "name": "Received",
-        "value": "from 127.0.0.1 by (Flowmailer API) with HTTP for <richard@flowmailer.local>; Thu, 30 Dec 2021 14:04:10 +0100 (CET)"
-      },
-      {
-        "name": "MIME-Version",
-        "value": "1.0"
-      },
-      {
-        "name": "From",
-        "value": "Casper Mout <casper@flowmailer.local>"
-      },
-      {
-        "name": "To",
-        "value": "Richard van Looijen <richard@flowmailer.local>"
-      },
-      {
-        "name": "X-Flow",
-        "value": "flow2"
-      },
-      {
-        "name": "Subject",
-        "value": "test message 2"
-      },
-      {
-        "name": "Content-Type",
-        "value": "text/plain; charset=UTF-8"
-      },
-      {
-        "name": "Content-Transfer-Encoding",
-        "value": "quoted-printable"
-      }
-    ],
-    "headersOut": [
-      /* Similar structure to previous message */
-    ],
-    "onlineLink": "https://web.flowmailer.net/viewonline.html?id=VRbzZZWMpsc:vOzNF1QJuDA8rJA0N8qXMw:wV7Ts97CcI2kjYEPXX9oBwaX_lzeNKb_fctcaxtXS8t22DmM-W1WgHKVHvjCqqNQChtDIOOY5765JChm-fufyoi9ej3Ozo-BM2d2KA-wE5_fYX0EsgpBVCo9LRfkXtJT:BNybztpiItklSftbSZuiRn-lZCsFfAaD6s13pBE4occ",
-    "status": "DELIVERED",
-    "subject": "test message 2",
-    "from": "casper@flowmailer.local",
-    "events": [
-      /* Message events */
-    ],
-    "messageDetailsLink": "https://web.flowmailer.net/viewmessage.html?id=VRbzZZWMpsc:3_8jv4YsOTEFqY-2SUEZiQ:Qs6lIfp-38XbTCxnKsp_l5tu84qgfF6xt7eWodni00yY_HB2qbWI2sNlS7xqDHfIJW-f3uF1BlFP0ri8EWMXK8xa0YWsAZ57DrII04JUbVcDy1vCpLV3f9oay4ODWTay:w4juMDpotut85I2n1zeLzR72_L6cOalZEwKXHdWmFLE&code=aa4487413f9257a84fe1911fb4fd6717a2cbace2",
-    "fromAddress": {
-      "name": "Casper Mout",
-      "address": "casper@flowmailer.local"
-    },
-    "toAddressList": [
-      {
-        "name": "Richard van Looijen",
-        "address": "richard@flowmailer.local"
-      }
-    ]
-  },
-  {
-    "submitted": "2021-12-30T13:04:12.000Z",
-    "id": "20211230130412891aae52e2f9e6ed11",
-    "transactionId": "5d7ac76c8f7b41c1b417a71505c9ef80",
-    "messageIdHeader": null,
-    "messageType": "EMAIL",
-    "source": {
-      "id": "6953",
-      "description": "test source a"
-    },
-    "flow": {
-      "id": "16814",
-      "description": "test flow 2"
-    },
-    "senderAddress": "support@flowmailer.local",
-    "recipientAddress": "richard@flowmailer.local",
-    "backendStart": "2021-12-30T13:04:33.897Z",
-    "backendDone": null,
-    "headersIn": [
-      /* Message headers */
-    ],
-    "status": "ERROR",
-    "subject": "test message 3",
-    "from": "casper@flowmailer.local",
-    "events": [
-      {
-        "id": "4254bf5b-5482-40a4-979a-514c3721910b",
-        "messageId": "20211230130412891aae52e2f9e6ed11",
-        "type": "ERROR",
-        "received": "2021-12-30T13:04:34.129Z",
-        "inserted": "2021-12-30T13:04:34.194Z",
-        "snippet": "The following has evaluated to null or missing:",
-        "mta": null,
-        "data": null,
-        "extraData": {
-          "errorText": "The following has evaluated to null or missing:\n==> var1 [in template \"48681\" at line 1, column 29]\n\n----\nTip: If the failing expression is known to be legally refer to something that's sometimes null or missing, either specify a default value like myOptionalVar!myDefault, or use <#if myOptionalVar??>when-present<#else>when-missing<\/#if>. (These only cover the last step of the expression; to cover the whole expression, use parenthesis: (myOptionalVar.foo)!myDefault, (myOptionalVar.foo)??\n----\n\n\t- Failed at: ${var1} [in template \"48681\" at line 1, column 27]\n",
-          "errorAfter": "QUEUE"
-        }
-      },
-      {
-        "id": null,
-        "messageId": "20211230130412891aae52e2f9e6ed11",
-        "type": "SUBMITTED",
-        "received": "2021-12-30T13:04:12.000Z",
-        "inserted": "2021-12-30T13:04:33.928Z",
-        "snippet": null,
-        "mta": null,
-        "data": null
-      }
-    ],
-    "fromAddress": {
-      "name": "Casper Mout",
-      "address": "casper@flowmailer.local"
-    },
-    "toAddressList": [
-      {
-        "name": "Richard van Looijen",
-        "address": "richard@flowmailer.local"
-      }
-    ]
+    "url": "https://example.com/file.pdf",
+    "content": "base64_encoded_content",
+    "name": "file.pdf"
   }
 ]
 ```
 
-## Message Object Structure
+## Usage Examples
 
-A message object contains the following fields:
+### Send Email with Custom HTML
 
-- `submitted`: Timestamp when the message was submitted
-- `id`: Unique message identifier
-- `transactionId`: Transaction identifier
-- `messageIdHeader`: Message ID header
-- `messageType`: Type of message (e.g., "EMAIL")
-- `source`: Source information object
-- `flow`: Flow information object
-- `senderAddress`: Email address of the sender
-- `recipientAddress`: Email address of the recipient
-- `backendStart`: Timestamp when backend processing started
-- `backendDone`: Timestamp when backend processing completed
-- `headersIn`: Array of input headers
-- `headersOut`: Array of output headers
-- `onlineLink`: URL to view the message online
-- `status`: Message status (e.g., "DELIVERED", "ERROR")
-- `subject`: Email subject
-- `from`: Sender email address
-- `events`: Array of event objects related to the message
-- `messageDetailsLink`: URL to view message details
-- `fromAddress`: Object containing sender name and address
-- `toAddressList`: Array of recipient objects with name and address
+```rust
+use reqwest::Client;
+use serde_json::{json, Value};
+use std::error::Error;
 
-## Event Object Structure
+async fn send_transactional_email() -> Result<(), Box<dyn Error>> {
+    let client = Client::new();
+    let api_key = "YOUR_API_KEY";
 
-Events have the following structure:
+    let response = client
+        .post("https://api.brevo.com/v3/smtp/email")
+        .header("accept", "application/json")
+        .header("api-key", api_key)
+        .header("content-type", "application/json")
+        .json(&json!({
+            "sender": {
+                "name": "Sender Name",
+                "email": "sender@example.com"
+            },
+            "to": [
+                {
+                    "email": "recipient@example.com",
+                    "name": "Recipient Name"
+                }
+            ],
+            "subject": "Hello world",
+            "htmlContent": "<html><head></head><body><p>Hello,</p><p>This is my first transactional email sent from Brevo.</p></body></html>"
+        }))
+        .send()
+        .await?;
 
-- `id`: Event identifier
-- `messageId`: ID of the associated message
-- `type`: Event type (e.g., "DELIVERED", "PROCESSED", "SUBMITTED", "ERROR")
-- `received`: Timestamp when the event was received
-- `inserted`: Timestamp when the event was inserted into the system
-- `snippet`: Optional snippet of relevant information
-- `mta`: Mail transfer agent information
-- `data`: Additional data (usually null)
-- `sourceMta`: Source mail transfer agent
-- `extraData`: Additional structured data for certain event types (e.g., error information)
+    let result: Value = response.json().await?;
+    println!("Response: {:?}", result);
 
-## Pagination
+    Ok(())
+}
+```
 
-The API supports pagination using the Range header in the request and Content-Range in the response. A `Next-Range` header is provided to retrieve the next set of results.
+### Send Email Using Template with Dynamic Parameters
 
-## Error Handling
+```rust
+use reqwest::Client;
+use serde_json::{json, Value};
+use std::error::Error;
 
-Error responses include detailed information about what went wrong, as shown in the third message example with "status": "ERROR".
+async fn send_template_email() -> Result<(), Box<dyn Error>> {
+    let client = Client::new();
+    let api_key = "YOUR_API_KEY";
+
+    let response = client
+        .post("https://api.brevo.com/v3/smtp/email")
+        .header("accept", "application/json")
+        .header("api-key", api_key)
+        .header("content-type", "application/json")
+        .json(&json!({
+            "to": [
+                {
+                    "email": "recipient@example.com",
+                    "name": "John Doe"
+                }
+            ],
+            "templateId": 8,
+            "params": {
+                "name": "John",
+                "surname": "Doe",
+                "ORDER": "12345",
+                "DATE": "12/06/2023"
+            },
+            "headers": {
+                "X-Mailin-custom": "custom_header_1:custom_value_1|custom_header_2:custom_value_2"
+            }
+        }))
+        .send()
+        .await?;
+
+    let result: Value = response.json().await?;
+    println!("Response: {:?}", result);
+
+    Ok(())
+}
+```
+
+## Response
+
+### Success Response
+
+Upon successful submission, the API returns a 201 status code with a response body containing the message ID:
+
+```json
+{
+  "messageId": "<201798300811.5787683@smtp-relay.sendinblue.com>"
+}
+```
+
+### Error Response
+
+In case of errors, the API returns an appropriate status code (typically 400 for validation errors) along with an error message:
+
+```json
+{
+  "code": "invalid_parameter",
+  "message": "Invalid email address"
+}
+```
+
+## Tracking Email Events
+
+You can track email events using Brevo's webhook functionality. The following events can be tracked:
+
+- Sent
+- Delivered
+- Opened
+- Clicked
+- Soft Bounce
+- Hard Bounce
+- Invalid Email
+- Deferred
+- Complaint
+- Unsubscribed
+- Blocked
+- Error
+
+To set up webhooks:
+1. Go to the transactional webhooks page in your Brevo account
+2. Specify the URL where you want to receive webhook data
+3. Select the events you want to track
+
+Alternatively, you can manage webhooks via the API using the Create/Update webhook endpoints.
+
+## Webhook Event Data Structure
+
+When an event occurs, Brevo will send a POST request to your webhook URL with data in the following format:
+
+```json
+{
+  "event": "delivered",
+  "email": "recipient@example.com",
+  "id": 26224,
+  "date": "YYYY-MM-DD HH:mm:ss",
+  "ts": 1598634509,
+  "message-id": "<201798300811.5787683@smtp-relay.sendinblue.com>",
+  "ts_event": 1598034509,
+  "subject": "Subject Line",
+  "tag": "[\"transactionalTag\"]",
+  "sending_ip": "185.41.28.109",
+  "ts_epoch": 1598634509223,
+  "tags": [
+    "myFirstTransactional"
+  ]
+}
+```
+
+## Best Practices
+
+1. **Use Templates**: For consistent email designs, create templates through the Brevo dashboard and use the `templateId` parameter.
+
+2. **Dynamic Content**: Leverage the `params` object to personalize emails with dynamic content.
+
+3. **Tagging**: Add tags to your emails for better categorization and tracking.
+
+4. **Error Handling**: Implement proper error handling to manage API failures.
+
+5. **Rate Limits**: Be aware of Brevo's rate limits and quota for sending emails.
+
+## Resources
+
+- [Brevo API Documentation](https://developers.brevo.com/)
+- [Brevo API Client Libraries](https://developers.brevo.com/docs/api-clients)
+- [Send Transactional Email Tutorial](https://developers.brevo.com/docs/send-a-transactional-email)
