@@ -18,7 +18,7 @@ mod utils;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-// use sqlx::sqlite::SqlitePool;
+// use sqlx::sqlite::SqlitePool; // Replaced by tokio_postgres::Client
 use std::env;
 use tokio;
 
@@ -59,35 +59,45 @@ async fn main() -> Result<()> {
 
     let cli = Cli::parse();
 
-    let db_url = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:data.db".to_string());
-    let pool = db::create_db_pool(&db_url).await?;
+    // Establish PostgreSQL connection
+    // Note: db::connect() reads POSTGRES_URL_NON_POOLING internally and panics if not set.
+    let mut client = db::connect().await.expect("Failed to connect to PostgreSQL");
+
+    // Apply database migrations
+    db::run_migrations(&mut client).await.expect("Failed to run database migrations");
+
+    // The `client` variable (type tokio_postgres::Client) now replaces the old `pool`.
+    // All functions below that used `&pool` will need to be refactored
+    // to accept `&mut tokio_postgres::Client` or `&tokio_postgres::Client`
+    // and use `tokio-postgres` APIs for their database operations.
+    // This will cause compilation errors until those functions are updated.
 
     match cli.command {
-        Some(Commands::ExportUs) => details_us_polygon::export_details_us_csv(&pool).await?,
-        Some(Commands::ExportEu) => details_eu_fmp::export_details_eu_csv(&pool).await?,
+        Some(Commands::ExportUs) => details_us_polygon::export_details_us_csv().await?,
+        Some(Commands::ExportEu) => details_eu_fmp::export_details_eu_csv(&mut client).await?,
         Some(Commands::ExportCombined) => {
-            marketcaps::marketcaps(&pool).await?;
+            marketcaps::marketcaps(&mut client).await?;
         }
-        Some(Commands::ListUs) => details_us_polygon::list_details_us(&pool).await?,
-        Some(Commands::ListEu) => details_eu_fmp::list_details_eu(&pool).await?,
+        Some(Commands::ListUs) => details_us_polygon::list_details_us().await?,
+        Some(Commands::ListEu) => details_eu_fmp::list_details_eu(&mut client).await?,
         Some(Commands::ExportRates) => {
             let api_key = env::var("FINANCIALMODELINGPREP_API_KEY")
                 .expect("FINANCIALMODELINGPREP_API_KEY must be set");
             let fmp_client = api::FMPClient::new(api_key);
-            exchange_rates::update_exchange_rates(&fmp_client, &pool).await?;
+            exchange_rates::update_exchange_rates(&fmp_client, &mut client).await?;
         }
         Some(Commands::FetchHistoricalMarketCaps {
             start_year,
             end_year,
         }) => {
-            historical_marketcaps::fetch_historical_marketcaps(&pool, start_year, end_year).await?;
+            historical_marketcaps::fetch_historical_marketcaps(&mut client, start_year, end_year).await?;
         }
         Some(Commands::FetchMonthlyHistoricalMarketCaps {
             start_year,
             end_year,
         }) => {
             monthly_historical_marketcaps::fetch_monthly_historical_marketcaps(
-                &pool, start_year, end_year,
+                &mut client, start_year, end_year,
             )
             .await?;
         }
@@ -95,21 +105,22 @@ async fn main() -> Result<()> {
             let api_key = env::var("FINANCIALMODELINGPREP_API_KEY")
                 .expect("FINANCIALMODELINGPREP_API_KEY must be set");
             let fmp_client = api::FMPClient::new(api_key);
-            currencies::update_currencies(&fmp_client, &pool).await?;
+            currencies::update_currencies(&fmp_client, &mut client).await?;
             println!("✅ Currencies updated from FMP API");
 
             // Also add the manually specified currency
-            currencies::insert_currency(&pool, &code, &name).await?;
+            currencies::insert_currency(&mut client, &code, &name).await?;
             println!("✅ Added currency: {} ({})", name, code);
         }
         Some(Commands::ListCurrencies) => {
-            let currencies = currencies::list_currencies(&pool).await?;
+            let currencies = currencies::list_currencies(&mut client).await?;
             for (code, name) in currencies {
                 println!("{}: {}", code, name);
             }
         }
         None => {
-            marketcaps::marketcaps(&pool).await?;
+            // Default command, presumably marketcaps
+            marketcaps::marketcaps(&mut client).await?;
         }
     }
 

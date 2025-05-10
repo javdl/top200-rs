@@ -35,3 +35,4 @@ tmp/
 # output/*
 .DS_Store
 coverage/
+**/.claude/settings.local.json

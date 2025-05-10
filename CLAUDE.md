@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a Rust application that tracks and analyzes market capitalization data for top companies (Top200-rs). It fetches data from financial APIs, stores it in SQLite, and provides various commands for analysis and export.
+This is a Rust application that tracks and analyzes market capitalization data for top companies (Top200-rs). It fetches data from financial APIs, stores it in a PostgreSQL database, and provides various commands for analysis and export.
 
 ## Building and Running
 
@@ -32,7 +32,8 @@ Create a `.env` file in the project root with:
 ```env
 FMP_API_KEY=your_api_key_here
 FINANCIALMODELINGPREP_API_KEY=your_api_key_here
-DATABASE_URL=sqlite:data.db  # Optional, defaults to sqlite:data.db
+POSTGRES_URL_NON_POOLING="postgres://user:password@host:port/dbname" # For PostgreSQL connection
+# Example: POSTGRES_URL_NON_POOLING="postgres://postgres:mysecretpassword@localhost:5432/top200_dev"
 ```
 
 ### Build Commands
@@ -75,14 +76,20 @@ cargo test test_details_serialization
 
 ## Database Operations
 
-The application uses SQLite with SQLx for database operations. Migrations are located in the `migrations/` directory.
+The application uses PostgreSQL with the `tokio-postgres` crate for database operations. Schema migrations are managed by `refinery` and are located in the `migrations/` directory.
+
+Ensure your `POSTGRES_URL_NON_POOLING` environment variable is set before running database commands.
 
 ```bash
-# Inspect database (using sqlite3 CLI)
-sqlite3 data.db
+# Apply database migrations
+# (Run from within nix develop if refinery-cli is only in the dev shell,
+#  otherwise use `nix develop --command refinery ...`)
+refinery migrate -e POSTGRES_URL_NON_POOLING -p ./migrations
 
-# Run a specific SQL query from tests
-sqlite3 data.db < tests/market_caps_totals_per_year.sql
+# Inspect database (using psql CLI)
+# (Run from within nix develop if psql is only in the dev shell)
+psql $POSTGRES_URL_NON_POOLING 
+# Or: psql "postgres://user:password@host:port/dbname"
 ```
 
 ## Code Architecture
@@ -98,7 +105,7 @@ sqlite3 data.db < tests/market_caps_totals_per_year.sql
    - Financial data
    - Exchange rates
 
-3. **Database Layer**: Handles SQLite operations and migrations
+3. **Database Layer**: Handles PostgreSQL operations using `tokio-postgres` and schema migrations using `refinery`.
 
 4. **Commands**: CLI interface using clap for parsing arguments
 
@@ -106,7 +113,7 @@ sqlite3 data.db < tests/market_caps_totals_per_year.sql
 
 1. Fetch exchange rates for currency conversion
 2. Retrieve market cap data from various sources
-3. Store in SQLite database
+3. Store in PostgreSQL database
 4. Generate reports (CSV exports, charts)
 
 ### Key Modules
@@ -116,6 +123,7 @@ sqlite3 data.db < tests/market_caps_totals_per_year.sql
 - `details_*.rs`: Company details from different sources
 - `historical_marketcaps.rs`: Historical data retrieval
 - `utils.rs`: Common utilities and helpers
+- `db.rs` (or similar): Will contain database connection logic and `refinery` integration.
 
 ## Common Tasks
 

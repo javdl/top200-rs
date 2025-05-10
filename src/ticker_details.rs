@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 use anyhow::Result;
-use sqlx::sqlite::SqlitePool;
+use tokio_postgres::Client;
 
 #[derive(Debug)]
 pub struct TickerDetails {
@@ -13,25 +13,26 @@ pub struct TickerDetails {
     pub employees: Option<String>,
 }
 
-/// Update ticker details in the database
-pub async fn update_ticker_details(pool: &SqlitePool, details: &TickerDetails) -> Result<()> {
-    sqlx::query!(
-        r#"
-        INSERT INTO ticker_details (ticker, description, homepage_url, employees)
-        VALUES (?, ?, ?, ?)
-        ON CONFLICT(ticker) DO UPDATE SET
-            description = excluded.description,
-            homepage_url = excluded.homepage_url,
-            employees = excluded.employees,
-            updated_at = CURRENT_TIMESTAMP
-        "#,
-        details.ticker,
-        details.description,
-        details.homepage_url,
-        details.employees,
-    )
-    .execute(pool)
-    .await?;
-
+/// Update specific ticker details in the company_details table
+pub async fn update_ticker_details(client: &mut Client, details: &TickerDetails) -> Result<()> {
+    client
+        .execute(
+            r#"
+            INSERT INTO company_details (ticker, description, homepage_url, employees, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, NOW(), NOW())
+            ON CONFLICT(ticker) DO UPDATE SET
+                description = EXCLUDED.description,
+                homepage_url = EXCLUDED.homepage_url,
+                employees = EXCLUDED.employees,
+                updated_at = NOW()
+            "#,
+            &[
+                &details.ticker,
+                &details.description,
+                &details.homepage_url,
+                &details.employees,
+            ],
+        )
+        .await?;
     Ok(())
 }

@@ -4,53 +4,59 @@
 
 use crate::api::FMPClient;
 use anyhow::Result;
-use sqlx::sqlite::SqlitePool;
 use std::collections::HashMap;
+use tokio_postgres::Client;
 
 /// Insert a currency into the database
-pub async fn insert_currency(pool: &SqlitePool, code: &str, name: &str) -> Result<()> {
-    sqlx::query(
-        r#"
-        INSERT INTO currencies (code, name)
-        VALUES (?, ?)
-        ON CONFLICT(code) DO UPDATE SET
-            name = excluded.name,
-            updated_at = CURRENT_TIMESTAMP
-        "#,
-    )
-    .bind(code)
-    .bind(name)
-    .execute(pool)
-    .await?;
-
+pub async fn insert_currency(client: &mut Client, code: &str, name: &str) -> Result<()> {
+    client
+        .execute(
+            r#"
+            INSERT INTO currencies (code, name, created_at, updated_at)
+            VALUES ($1, $2, NOW(), NOW())
+            ON CONFLICT(code) DO UPDATE SET
+                name = EXCLUDED.name,
+                updated_at = NOW()
+            "#,
+            &[&code, &name],
+        )
+        .await?;
     Ok(())
 }
 
 /// List all currencies in the database
-pub async fn list_currencies(pool: &SqlitePool) -> Result<Vec<(String, String)>> {
-    let records = sqlx::query_as::<_, (String, String)>(
-        r#"
-        SELECT code, name
-        FROM currencies
-        ORDER BY code
-        "#,
-    )
-    .fetch_all(pool)
-    .await?;
+pub async fn list_currencies(client: &Client) -> Result<Vec<(String, String)>> {
+    let rows = client
+        .query(
+            r#"
+            SELECT code, name
+            FROM currencies
+            ORDER BY code
+            "#,
+            &[], // No parameters
+        )
+        .await?;
+
+    let mut records = Vec::new();
+    for row in rows {
+        let code: String = row.try_get("code")?;
+        let name: String = row.try_get("name")?;
+        records.push((code, name));
+    }
 
     Ok(records)
 }
 
 /// Get a map of exchange rates between currencies from the database
-pub async fn get_rate_map_from_db(pool: &SqlitePool) -> Result<HashMap<String, f64>> {
+pub async fn get_rate_map_from_db(client: &Client) -> Result<HashMap<String, f64>> {
     let mut rate_map = HashMap::new();
 
     // Get all unique symbols from the database
-    let symbols = list_forex_symbols(pool).await?;
+    let symbols = list_forex_symbols(client).await?;
 
     // Get latest rates for each symbol
     for symbol in symbols {
-        if let Some((ask, _bid, _timestamp)) = get_latest_forex_rate(pool, &symbol).await? {
+        if let Some((ask, _bid, _api_timestamp)) = get_latest_forex_rate(client, &symbol).await? {
             let (from, to) = symbol.split_once('/').unwrap();
             rate_map.insert(format!("{}/{}", from, to), ask);
             rate_map.insert(format!("{}/{}", to, from), 1.0 / ask);
@@ -150,70 +156,81 @@ pub fn convert_currency(
 
 /// Insert a forex rate into the database
 pub async fn insert_forex_rate(
-    pool: &SqlitePool,
+    client: &mut Client,
     symbol: &str,
     ask: f64,
     bid: f64,
-    timestamp: i64,
+    api_timestamp_val: i64, // Renamed parameter for clarity against column name
 ) -> Result<()> {
-    sqlx::query(
-        r#"
-        INSERT INTO forex_rates (symbol, ask, bid, timestamp)
-        VALUES (?, ?, ?, ?)
-        ON CONFLICT(symbol, timestamp) DO UPDATE SET
-            ask = excluded.ask,
-            bid = excluded.bid,
-            updated_at = CURRENT_TIMESTAMP
-        "#,
-    )
-    .bind(symbol)
-    .bind(ask)
-    .bind(bid)
-    .bind(timestamp)
-    .execute(pool)
-    .await?;
+    client
+        .execute(
+            r#"
+            INSERT INTO forex_rates (symbol, ask, bid, api_timestamp, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, NOW(), NOW())
+            ON CONFLICT(symbol, api_timestamp) DO UPDATE SET
+                ask = EXCLUDED.ask,
+                bid = EXCLUDED.bid,
+                updated_at = NOW()
+            "#,
+            &[&symbol, &ask, &bid, &api_timestamp_val],
+        )
+        .await?;
 
     Ok(())
 }
 
 /// Get the latest forex rate for a symbol
 pub async fn get_latest_forex_rate(
-    pool: &SqlitePool,
+    client: &Client,
     symbol: &str,
-) -> Result<Option<(f64, f64, i64)>> {
-    let record = sqlx::query_as::<_, (f64, f64, i64)>(
-        r#"
-        SELECT ask, bid, timestamp
-        FROM forex_rates
-        WHERE symbol = ?
-        ORDER BY timestamp DESC
-        LIMIT 1
-        "#,
-    )
-    .bind(symbol)
-    .fetch_optional(pool)
-    .await?;
+) -> Result<Option<(f64, f64, i64)>> { // Returns (ask, bid, api_timestamp)
+    let row_opt = client
+        .query_opt(
+            r#"
+            SELECT ask, bid, api_timestamp
+            FROM forex_rates
+            WHERE symbol = $1
+            ORDER BY api_timestamp DESC
+            LIMIT 1
+            "#,
+            &[&symbol],
+        )
+        .await?;
 
-    Ok(record)
+    if let Some(row) = row_opt {
+        let ask: f64 = row.try_get("ask")?;
+        let bid: f64 = row.try_get("bid")?;
+        let api_timestamp: i64 = row.try_get("api_timestamp")?;
+        Ok(Some((ask, bid, api_timestamp)))
+    } else {
+        Ok(None)
+    }
 }
 
 /// List all unique symbols in the forex_rates table
-pub async fn list_forex_symbols(pool: &SqlitePool) -> Result<Vec<String>> {
-    let records = sqlx::query_as::<_, (String,)>(
-        r#"
-        SELECT DISTINCT symbol
-        FROM forex_rates
-        ORDER BY symbol
-        "#,
-    )
-    .fetch_all(pool)
-    .await?;
+pub async fn list_forex_symbols(client: &Client) -> Result<Vec<String>> {
+    let rows = client
+        .query(
+            r#"
+            SELECT DISTINCT symbol
+            FROM forex_rates
+            ORDER BY symbol
+            "#,
+            &[], // No parameters
+        )
+        .await?;
 
-    Ok(records.into_iter().map(|(symbol,)| symbol).collect())
+    let mut symbols = Vec::new();
+    for row in rows {
+        // Assuming 'symbol' is the first column selected
+        let symbol: String = row.try_get(0)?;
+        symbols.push(symbol);
+    }
+    Ok(symbols)
 }
 
 /// Update currencies from FMP API
-pub async fn update_currencies(fmp_client: &FMPClient, pool: &SqlitePool) -> Result<()> {
+pub async fn update_currencies(fmp_client: &FMPClient, client: &mut Client) -> Result<()> {
     println!("Fetching currencies from FMP API...");
     let exchange_rates = match fmp_client.get_exchange_rates().await {
         Ok(rates) => {
@@ -227,11 +244,16 @@ pub async fn update_currencies(fmp_client: &FMPClient, pool: &SqlitePool) -> Res
 
     // Extract unique currencies from exchange rates
     for rate in exchange_rates {
-        if let Some(name) = rate.name {
-            if let Some((from, to)) = name.split_once('/') {
-                // Insert both currencies
-                insert_currency(pool, from, from).await?;
-                insert_currency(pool, to, to).await?;
+        // Assuming rate.name is a String like "USD/EUR" and refers to currency codes
+        // And assuming FMPClient::ExchangeRate has a `name: Option<String>` field
+        // which represents the currency pair.
+        if let Some(currency_pair_name) = rate.name {
+            // Renamed for clarity
+            if let Some((from_code, to_code)) = currency_pair_name.split_once('/') {
+                // We are inserting the currency codes as their names for now.
+                // This might need refinement if you want full currency names.
+                insert_currency(client, from_code, from_code).await?;
+                insert_currency(client, to_code, to_code).await?;
             }
         }
     }

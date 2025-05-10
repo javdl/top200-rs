@@ -6,10 +6,9 @@ use crate::config;
 use anyhow::Result;
 use chrono::{Local, NaiveDate};
 use csv::Writer;
-use sqlx::sqlite::SqlitePool;
 use std::{env, path::PathBuf, sync::Arc};
 
-pub async fn export_details_us_csv(_pool: &SqlitePool) -> Result<()> {
+pub async fn export_details_us_csv() -> Result<()> {
     let config = config::load_config()?;
     let tickers = config.us_tickers;
     let api_key = env::var("POLYGON_API_KEY").expect("POLYGON_API_KEY must be set");
@@ -106,7 +105,7 @@ pub async fn export_details_us_csv(_pool: &SqlitePool) -> Result<()> {
     Ok(())
 }
 
-pub async fn list_details_us(_pool: &SqlitePool) -> Result<()> {
+pub async fn list_details_us() -> Result<()> {
     let config = config::load_config()?;
     let tickers = config.us_tickers;
     let api_key = env::var("POLYGON_API_KEY").expect("POLYGON_API_KEY must be set");

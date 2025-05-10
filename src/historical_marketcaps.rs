@@ -7,11 +7,11 @@ use crate::config;
 use crate::currencies::{convert_currency, get_rate_map_from_db};
 use anyhow::Result;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-use sqlx::sqlite::SqlitePool;
+use tokio_postgres::Client; // Added
 use std::sync::Arc;
 
 pub async fn fetch_historical_marketcaps(
-    pool: &SqlitePool,
+    client: &mut Client,
     start_year: i32,
     end_year: i32,
 ) -> Result<()> {
@@ -34,7 +34,7 @@ pub async fn fetch_historical_marketcaps(
         let naive_dt = NaiveDateTime::new(date, NaiveTime::default());
         let datetime_utc = naive_dt.and_utc();
         println!("Fetching exchange rates for {}", naive_dt);
-        let rate_map = get_rate_map_from_db(pool).await?;
+        let rate_map = get_rate_map_from_db(client).await?;
 
         for ticker in &tickers {
             match fmp_client
@@ -61,28 +61,52 @@ pub async fn fetch_historical_marketcaps(
                     let timestamp = naive_dt.and_utc().timestamp();
 
                     // Insert into database
-                    sqlx::query!(
-                        r#"
-                        INSERT INTO market_caps (
-                            ticker, name, market_cap_original, original_currency,
-                            market_cap_eur, market_cap_usd, exchange, price,
-                            active, timestamp
+                    // Values from Ok(market_cap) match:
+                    // ticker: &String (loop variable)
+                    // market_cap.name: String
+                    // market_cap.market_cap_original: f64
+                    // market_cap.original_currency: String
+                    // market_cap_eur: f64 (calculated)
+                    // market_cap_usd: f64 (calculated)
+                    // market_cap.exchange: String
+                    // market_cap.price: f64
+                    // active: bool (hardcoded as true previously)
+                    // timestamp: i64 (api_timestamp_val)
+
+                    client
+                        .execute(
+                            r#"
+                            INSERT INTO market_caps (
+                                ticker, name, market_cap_original, original_currency,
+                                market_cap_eur, market_cap_usd, exchange, price,
+                                active, api_timestamp, created_at, updated_at
+                            )
+                            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+                            ON CONFLICT (ticker, api_timestamp) DO UPDATE SET
+                                name = EXCLUDED.name,
+                                market_cap_original = EXCLUDED.market_cap_original,
+                                original_currency = EXCLUDED.original_currency,
+                                market_cap_eur = EXCLUDED.market_cap_eur,
+                                market_cap_usd = EXCLUDED.market_cap_usd,
+                                exchange = EXCLUDED.exchange,
+                                price = EXCLUDED.price,
+                                active = EXCLUDED.active,
+                                updated_at = NOW()
+                            "#,
+                            &[
+                                &ticker,
+                                &market_cap.name,
+                                &(market_cap.market_cap_original as i64),
+                                &market_cap.original_currency,
+                                &(market_cap_eur as i64),
+                                &(market_cap_usd as i64),
+                                &market_cap.exchange,
+                                &market_cap.price,
+                                &true, // active
+                                &timestamp, // api_timestamp
+                            ],
                         )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        "#,
-                        ticker,
-                        market_cap.name,
-                        market_cap.market_cap_original,
-                        market_cap.original_currency,
-                        market_cap_eur,
-                        market_cap_usd,
-                        market_cap.exchange,
-                        market_cap.price,
-                        true,
-                        timestamp,
-                    )
-                    .execute(pool)
-                    .await?;
+                        .await?;
 
                     println!(
                         "✅ Added historical market cap for {} on {}",
