@@ -72,6 +72,7 @@
 
           # Environment variables
           shellHook = ''
+            export DATABASE_URL=sqlite:data.db
             echo "🦀 Welcome to the top200-rs development environment!"
           '';
         };
