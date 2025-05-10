@@ -35,6 +35,7 @@
         # because we'll use it for both `cargoArtifacts` and `bin`
         commonArgs = {
           inherit src buildInputs nativeBuildInputs;
+          DATABASE_URL = "sqlite:data.db";
         };
         cargoArtifacts = craneLib.buildDepsOnly commonArgs;
         # remember, `set1 // set2` does a shallow merge:
