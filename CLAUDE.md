@@ -144,3 +144,12 @@ cargo run -- FetchHistoricalMarketCaps 2023 2025
 # Fetch monthly historical market caps
 cargo run -- FetchMonthlyHistoricalMarketCaps 2023 2025
 ```
+
+### Code Formatting
+
+After making code changes, always run the Rust formatter to ensure code style consistency:
+
+```bash
+# Format all code in the project (run from within nix develop)
+nix develop --command cargo fmt --all
+```

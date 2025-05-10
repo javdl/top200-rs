@@ -50,7 +50,10 @@ pub fn load_config() -> anyhow::Result<Config> {
             }
         }
         Err(e) => {
-            eprintln!("Failed to read config.toml from path {:?}: {}", config_path, e); // Log error
+            eprintln!(
+                "Failed to read config.toml from path {:?}: {}",
+                config_path, e
+            ); // Log error
             Err(e.into())
         }
     }
