@@ -20,7 +20,7 @@
         {
             "previewLimit": 50,
             "driver": "SQLite",
-            "database": "${workspaceFolder:top200-rs}/top200.db",
+            "database": "${workspaceFolder:top200-rs}/data.db",
             "name": "top200"
         }
     ],

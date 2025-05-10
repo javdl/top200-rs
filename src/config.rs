@@ -39,9 +39,21 @@ fn get_config_path() -> PathBuf {
 
 pub fn load_config() -> anyhow::Result<Config> {
     let config_path = get_config_path();
-    let config_str = fs::read_to_string(config_path)?;
-    let config: Config = toml::from_str(&config_str)?;
-    Ok(config)
+    match fs::read_to_string(&config_path) {
+        Ok(config_str) => {
+            match toml::from_str(&config_str) {
+                Ok(config) => Ok(config),
+                Err(e) => {
+                    eprintln!("Failed to parse config.toml: {}", e); // Log error
+                    Err(e.into())
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to read config.toml from path {:?}: {}", config_path, e); // Log error
+            Err(e.into())
+        }
+    }
 }
 
 #[allow(dead_code)]

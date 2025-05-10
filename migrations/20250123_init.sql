@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS market_caps (
     pe_ratio DECIMAL,
     de_ratio DECIMAL,
     roe DECIMAL,
-    timestamp DATETIME NOT NULL,
+    timestamp INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (ticker, timestamp)

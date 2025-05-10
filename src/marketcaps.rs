@@ -73,12 +73,12 @@ async fn get_market_caps(pool: &SqlitePool) -> Result<Vec<(f64, Vec<String>)>> {
     let records = sqlx::query!(
         r#"
         SELECT 
-            m.ticker,
-            m.name,
-            m.market_cap_original,
+            m.ticker as "ticker!",
+            m.name as "name!",
+            CAST(m.market_cap_original AS REAL) as market_cap_original,
             m.original_currency,
-            m.market_cap_eur,
-            m.market_cap_usd,
+            CAST(m.market_cap_eur AS REAL) as market_cap_eur,
+            CAST(m.market_cap_usd AS REAL) as market_cap_usd,
             m.exchange,
             m.active,
             strftime('%s', m.timestamp) as timestamp,
@@ -103,10 +103,10 @@ async fn get_market_caps(pool: &SqlitePool) -> Result<Vec<(f64, Vec<String>)>> {
                     r.ticker.clone(),
                     r.ticker,
                     r.name,
-                    r.market_cap_original.unwrap_or(0).to_string(),
+                    r.market_cap_original.unwrap_or(0.0).to_string(),
                     r.original_currency.unwrap_or_default(),
                     r.market_cap_eur.unwrap_or(0.0).to_string(),
-                    r.market_cap_usd.unwrap_or(0).to_string(),
+                    r.market_cap_usd.unwrap_or(0.0).to_string(),
                     r.exchange.unwrap_or_default(),
                     if r.active.unwrap_or(true) {
                         "true".to_string()

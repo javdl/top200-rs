@@ -32,7 +32,7 @@ Create a `.env` file in the project root with:
 ```env
 FMP_API_KEY=your_api_key_here
 FINANCIALMODELINGPREP_API_KEY=your_api_key_here
-DATABASE_URL=sqlite:top200.db  # Optional, defaults to sqlite:data.db
+DATABASE_URL=sqlite:data.db  # Optional, defaults to sqlite:data.db
 ```
 
 ### Build Commands
@@ -79,10 +79,10 @@ The application uses SQLite with SQLx for database operations. Migrations are lo
 
 ```bash
 # Inspect database (using sqlite3 CLI)
-sqlite3 top200.db
+sqlite3 data.db
 
 # Run a specific SQL query from tests
-sqlite3 top200.db < tests/market_caps_totals_per_year.sql
+sqlite3 data.db < tests/market_caps_totals_per_year.sql
 ```
 
 ## Code Architecture

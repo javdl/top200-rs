@@ -1,26 +1,22 @@
-// SPDX-FileCopyrightText: 2025 Joost van der Laan <joost@fashionunited.com>
-//
-// SPDX-License-Identifier: AGPL-3.0-only
-
 {
   "db_name": "SQLite",
-  "query": "\n        SELECT \n            m.ticker,\n            m.name,\n            m.market_cap_original,\n            m.original_currency,\n            m.market_cap_eur,\n            m.market_cap_usd,\n            m.exchange,\n            m.active,\n            strftime('%s', m.timestamp) as timestamp,\n            td.description,\n            td.homepage_url,\n            td.employees\n        FROM market_caps m\n        LEFT JOIN ticker_details td ON m.ticker = td.ticker\n        WHERE m.timestamp = (SELECT MAX(timestamp) FROM market_caps)\n        ",
+  "query": "\n        SELECT \n            m.ticker as \"ticker!\",\n            m.name as \"name!\",\n            CAST(m.market_cap_original AS REAL) as market_cap_original,\n            m.original_currency,\n            CAST(m.market_cap_eur AS REAL) as market_cap_eur,\n            CAST(m.market_cap_usd AS REAL) as market_cap_usd,\n            m.exchange,\n            m.active,\n            strftime('%s', m.timestamp) as timestamp,\n            td.description,\n            td.homepage_url,\n            td.employees\n        FROM market_caps m\n        LEFT JOIN ticker_details td ON m.ticker = td.ticker\n        WHERE m.timestamp = (SELECT MAX(timestamp) FROM market_caps)\n        ",
   "describe": {
     "columns": [
       {
-        "name": "ticker",
+        "name": "ticker!",
         "ordinal": 0,
         "type_info": "Text"
       },
       {
-        "name": "name",
+        "name": "name!",
         "ordinal": 1,
         "type_info": "Text"
       },
       {
         "name": "market_cap_original",
         "ordinal": 2,
-        "type_info": "Integer"
+        "type_info": "Float"
       },
       {
         "name": "original_currency",
@@ -35,7 +31,7 @@
       {
         "name": "market_cap_usd",
         "ordinal": 5,
-        "type_info": "Integer"
+        "type_info": "Float"
       },
       {
         "name": "exchange",
@@ -86,5 +82,5 @@
       true
     ]
   },
-  "hash": "339a30e02ca1e89598dfcb961d8cf3a1a466a6c23ab6b6da3a6a7f4e06caf040"
+  "hash": "b093cc66b8ff68141997e9b349c628250a6ab0c0d143b8a76da50c0d8baba036"
 }
