@@ -1,14 +1,13 @@
 // SPDX-FileCopyrightText: 2025 Joost van der Laan <joost@fashionunited.com>
 //
-// SPDX-License-Identifier: AGPL-3
-.0-only
+// SPDX-License-Identifier: AGPL-3.0-only
 
-use tokio_postgres::{Client, Config};
-use refinery::Error as RefineryError;
 use native_tls::TlsConnector;
 use postgres_native_tls::MakeTlsConnector;
+use refinery::Error as RefineryError;
+use std::error::Error as StdError;
 use std::str::FromStr;
-use std::error::Error as StdError; // Renamed to avoid conflict
+use tokio_postgres::{Client, Config}; // Renamed to avoid conflict
 
 // Module to embed SQL migration files
 mod embedded_migrations {
@@ -23,9 +22,13 @@ mod embedded_migrations {
 /// Spawns a Tokio task to handle the database connection.
 pub async fn connect() -> Result<Client, Box<dyn StdError + Send + Sync + 'static>> {
     let db_url = std::env::var("POSTGRES_URL_NON_POOLING").map_err(|e| {
-        let err_msg = format!("Environment variable POSTGRES_URL_NON_POOLING must be set: {}", e);
+        let err_msg = format!(
+            "Environment variable POSTGRES_URL_NON_POOLING must be set: {}",
+            e
+        );
         eprintln!("{}", err_msg);
-        Box::new(std::io::Error::new(std::io::ErrorKind::NotFound, err_msg)) as Box<dyn StdError + Send + Sync + 'static>
+        Box::new(std::io::Error::new(std::io::ErrorKind::NotFound, err_msg))
+            as Box<dyn StdError + Send + Sync + 'static>
     })?;
 
     let pg_config = Config::from_str(&db_url).map_err(|e| {
@@ -42,7 +45,10 @@ pub async fn connect() -> Result<Client, Box<dyn StdError + Send + Sync + 'stati
     let connector = tls_builder.build().map_err(|e| {
         let detailed_error_msg = format!("Failed to build TLS connector: {}", e);
         eprintln!("{}", detailed_error_msg);
-        Box::new(std::io::Error::new(std::io::ErrorKind::Other, detailed_error_msg)) as Box<dyn StdError + Send + Sync + 'static>
+        Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            detailed_error_msg,
+        )) as Box<dyn StdError + Send + Sync + 'static>
     })?;
     let tls_connector = MakeTlsConnector::new(connector);
 
@@ -65,14 +71,15 @@ pub async fn connect() -> Result<Client, Box<dyn StdError + Send + Sync + 'stati
     Ok(client)
 }
 
-
 /// Runs database migrations using the embedded migration files.
 ///
 /// # Arguments
 /// * `client` - A mutable reference to a `tokio_postgres::Client`.
 pub async fn run_migrations(client: &mut Client) -> Result<(), RefineryError> {
     println!("Applying database migrations...");
-    embedded_migrations::migrations::runner().run_async(client).await?;
+    embedded_migrations::migrations::runner()
+        .run_async(client)
+        .await?;
     println!("Database migrations applied successfully.");
     Ok(())
 }
