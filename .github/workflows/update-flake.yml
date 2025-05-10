@@ -15,9 +15,16 @@ env:
 jobs:
   lockfile:
     runs-on: ubuntu-latest
+    # Add permissions for GitHub token
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Fetch all history for proper PR creation
+          fetch-depth: 0
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
       - name: Update flake.lock
