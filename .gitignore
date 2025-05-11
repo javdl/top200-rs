@@ -37,4 +37,4 @@ tmp/
 coverage/
 **/.claude/settings.local.json
 
-*.crt
+certs/
