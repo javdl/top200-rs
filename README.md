@@ -45,7 +45,7 @@ FMP_API_KEY=your_api_key_here
 Run the application:
 
 ```bash
-nix develop 
+nix develop
 cargo run
 ```
 
@@ -72,6 +72,22 @@ cargo run -- --help
 - [ ] Add a command to test with a subset of tickers
 - [ ] Add more comprehensive error handling
 - [ ] Improve rate limiting strategy
+
+## AI coding
+
+## Install Claude Code
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+## Tutorials
+
+https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/tutorials](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/tutorials)
+
+## Context priming
+Read README.md, CLAUDE.md docs/*, and run git ls-files to understand this codebase.
+
 
 ## License
 
