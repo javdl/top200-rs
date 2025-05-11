@@ -61,6 +61,21 @@ Get a list of available commands:
 cargo run -- --help
 ```
 
+## Connecting to postgres
+
+get the connection string (from Supabase for example) and add to .env.
+also download the crt and add it to the certificate authority list used by Postgres.
+
+```bash
+cat ~/Downloads/prod-ca-2021.crt >> ~/.postgres/root.crt
+```
+
+Since we use Nix, put the cert in the `certs/` folder in this project.
+
+```bash
+cp ~/Downloads/prod-ca-2021.crt ./certs/
+```
+
 ## Development
 
 ### Resources

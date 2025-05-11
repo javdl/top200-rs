@@ -72,6 +72,7 @@
           # Environment variables
           shellHook = ''
             export DATABASE_URL=sqlite:data.db
+            export SSL_CERT_FILE=${self}/certs/prod-ca-2021.crt
             echo "🦀 Welcome to the top200-rs development environment!"
           '';
         };
