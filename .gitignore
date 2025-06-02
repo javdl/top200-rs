@@ -35,3 +35,5 @@ tmp/
 # output/*
 .DS_Store
 coverage/
+
+certs/
