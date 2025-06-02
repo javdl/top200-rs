@@ -8,7 +8,7 @@ This is a Rust application that tracks and analyzes market capitalization data f
 
 ## Building and Running
 
-This project use a Nix development environment.
+This project uses a Nix development environment.
 Prefix commands with `nix develop --command` to run them in the Nix environment. In the docs we put regular commands without the prefix to be concise.
 
 ### Development Environment Setup
@@ -71,6 +71,22 @@ cargo test -- --nocapture
 
 # Run a specific test
 cargo test test_details_serialization
+
+# Run tests with coverage
+cargo tarpaulin --out lcov --output-dir coverage
+```
+
+## Linting and Formatting
+
+```bash
+# Format code
+cargo fmt --all
+
+# Run clippy linter
+cargo clippy
+
+# Check license compliance
+reuse lint
 ```
 
 ## Database Operations
@@ -90,8 +106,9 @@ sqlite3 data.db < tests/market_caps_totals_per_year.sql
 ### Core Components
 
 1. **API Clients**: Abstraction layer for external APIs
-   - Financial Modeling Prep (FMP) API client
-   - Polygon.io API client
+   - Financial Modeling Prep (FMP) API client in `src/api.rs`
+   - Polygon.io API client in `src/api.rs`
+   - Rate limiting with tokio semaphore (300 req/min for FMP)
 
 2. **Data Models**: Defined in `src/models.rs`
    - Company details
@@ -99,6 +116,9 @@ sqlite3 data.db < tests/market_caps_totals_per_year.sql
    - Exchange rates
 
 3. **Database Layer**: Handles SQLite operations and migrations
+   - Connection pooling with SQLx
+   - Automatic migrations on startup
+   - Tables: `currencies`, `forex_rates`, `market_caps`, `ticker_details`
 
 4. **Commands**: CLI interface using clap for parsing arguments
 
@@ -115,6 +135,8 @@ sqlite3 data.db < tests/market_caps_totals_per_year.sql
 - `exchange_rates.rs`: Currency exchange rate handling
 - `details_*.rs`: Company details from different sources
 - `historical_marketcaps.rs`: Historical data retrieval
+- `monthly_historical_marketcaps.rs`: Monthly historical data
+- `ticker_details.rs`: Company details management
 - `utils.rs`: Common utilities and helpers
 
 ## Common Tasks
@@ -162,3 +184,24 @@ After making changes, especially to dependencies, run `cargo-deny` to check for 
 # Run cargo-deny checks (run from within nix develop)
 nix develop --command cargo deny check
 ```
+
+## API Rate Limits and Error Handling
+
+- **FMP API**: 300 requests per minute (enforced via semaphore)
+- **Polygon API**: Standard rate limits apply
+- Automatic retry logic for transient failures
+- Progress bars for long-running operations
+- Comprehensive error messages with anyhow
+
+## CLI Commands
+
+The application supports these main commands:
+
+- `MarketCaps` (default) - Fetch and update market cap data
+- `ExportCombined` - Export combined market cap report to CSV
+- `ExportRates` - Export exchange rates to CSV
+- `FetchHistoricalMarketCaps` - Fetch historical yearly data
+- `FetchMonthlyHistoricalMarketCaps` - Fetch historical monthly data
+- `ListCurrencies` - List all available currencies
+- `Details` - Fetch company details
+- `ReadConfig` - Display configuration
