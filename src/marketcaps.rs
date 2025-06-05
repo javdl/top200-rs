@@ -206,6 +206,9 @@ pub async fn export_market_caps(pool: &SqlitePool) -> Result<()> {
     // Sort by EUR market cap
     results.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
 
+    // Ensure output directory exists
+    std::fs::create_dir_all("output")?;
+
     // Export to CSV
     let timestamp = Local::now().format("%Y%m%d_%H%M%S");
     let filename = format!("output/combined_marketcaps_{}.csv", timestamp);
@@ -252,6 +255,9 @@ pub async fn export_top_100_active(pool: &SqlitePool) -> Result<()> {
         .filter(|(_, record)| record[8] == "true") // Active column
         .take(100)
         .collect();
+
+    // Ensure output directory exists
+    std::fs::create_dir_all("output")?;
 
     // Export to CSV
     let timestamp = Local::now().format("%Y%m%d_%H%M%S");
