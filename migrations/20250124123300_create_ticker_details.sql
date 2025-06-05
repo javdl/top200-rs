@@ -3,10 +3,9 @@ CREATE TABLE IF NOT EXISTS ticker_details (
     ticker TEXT PRIMARY KEY,
     description TEXT,
     homepage_url TEXT,
-    employees INTEGER,
+    employees TEXT,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
--- Remove these columns from market_caps table
-ALTER TABLE market_caps DROP COLUMN description;
-ALTER TABLE market_caps DROP COLUMN homepage_url;
+-- Note: We keep the columns in market_caps for backward compatibility
+-- The description and homepage_url columns in market_caps will be populated by ticker_details table when needed

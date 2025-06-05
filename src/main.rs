@@ -18,9 +18,7 @@ mod utils;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-// use sqlx::sqlite::SqlitePool;
 use std::env;
-use tokio;
 
 #[derive(Debug, Parser)]
 #[command(author, version, about, long_about = None)]
@@ -31,6 +29,8 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    /// Fetch and update market cap data (default action)
+    MarketCaps,
     /// Export US market caps to CSV
     ExportUs,
     /// Export EU market caps to CSV
@@ -51,6 +51,10 @@ enum Commands {
     AddCurrency { code: String, name: String },
     /// List currencies
     ListCurrencies,
+    /// Fetch company details
+    Details,
+    /// Display configuration
+    ReadConfig,
 }
 
 #[tokio::main]
@@ -63,6 +67,9 @@ async fn main() -> Result<()> {
     let pool = db::create_db_pool(&db_url).await?;
 
     match cli.command {
+        Some(Commands::MarketCaps) => {
+            marketcaps::marketcaps(&pool).await?;
+        }
         Some(Commands::ExportUs) => details_us_polygon::export_details_us_csv(&pool).await?,
         Some(Commands::ExportEu) => details_eu_fmp::export_details_eu_csv(&pool).await?,
         Some(Commands::ExportCombined) => {
@@ -107,6 +114,15 @@ async fn main() -> Result<()> {
             for (code, name) in currencies {
                 println!("{}: {}", code, name);
             }
+        }
+        Some(Commands::Details) => {
+            ticker_details::fetch_and_store_details(&pool).await?;
+        }
+        Some(Commands::ReadConfig) => {
+            let config = config::load_config()?;
+            println!("Configuration:");
+            println!("US tickers: {:?}", config.us_tickers);
+            println!("Non-US tickers: {:?}", config.non_us_tickers);
         }
         None => {
             marketcaps::marketcaps(&pool).await?;

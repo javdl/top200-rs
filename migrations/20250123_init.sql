@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS market_caps (
     active BOOLEAN,
     description TEXT,
     homepage_url TEXT,
-    employees INTEGER,
+    employees TEXT,
     revenue DECIMAL,
     revenue_usd DECIMAL,
     working_capital_ratio DECIMAL,
