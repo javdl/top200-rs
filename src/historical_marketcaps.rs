@@ -30,7 +30,8 @@ pub async fn fetch_historical_marketcaps(
 
     for year in start_year..=end_year {
         // Get Dec 31st of each year
-        let date = NaiveDate::from_ymd_opt(year, 12, 31).unwrap();
+        let date = NaiveDate::from_ymd_opt(year, 12, 31)
+            .ok_or_else(|| anyhow::anyhow!("Invalid date: {}-12-31", year))?;
         let naive_dt = NaiveDateTime::new(date, NaiveTime::default());
         let datetime_utc = naive_dt.and_utc();
         println!("Fetching exchange rates for {}", naive_dt);

@@ -37,8 +37,9 @@ pub async fn fetch_monthly_historical_marketcaps(
             }
 
             // Get the last day of the month at 23:59
-            let last_day = get_last_day_of_month(year, month);
-            let time = NaiveTime::from_hms_opt(23, 59, 0).unwrap();
+            let last_day = get_last_day_of_month(year, month)?;
+            let time = NaiveTime::from_hms_opt(23, 59, 0)
+                .ok_or_else(|| anyhow::anyhow!("Invalid time: 23:59:00"))?;
             let naive_dt = NaiveDateTime::new(last_day, time);
             let datetime_utc = naive_dt.and_utc();
 
@@ -113,13 +114,16 @@ pub async fn fetch_monthly_historical_marketcaps(
 }
 
 /// Helper function to get the last day of a given month
-fn get_last_day_of_month(year: i32, month: u32) -> NaiveDate {
+fn get_last_day_of_month(year: i32, month: u32) -> Result<NaiveDate, anyhow::Error> {
     let first_day_next_month = if month == 12 {
-        NaiveDate::from_ymd_opt(year + 1, 1, 1).unwrap()
+        NaiveDate::from_ymd_opt(year + 1, 1, 1)
+            .ok_or_else(|| anyhow::anyhow!("Invalid date: {}-01-01", year + 1))?
     } else {
-        NaiveDate::from_ymd_opt(year, month + 1, 1).unwrap()
+        NaiveDate::from_ymd_opt(year, month + 1, 1)
+            .ok_or_else(|| anyhow::anyhow!("Invalid date: {}-{:02}-01", year, month + 1))?
     };
-    first_day_next_month.pred_opt().unwrap()
+    first_day_next_month.pred_opt()
+        .ok_or_else(|| anyhow::anyhow!("Cannot get previous day for {}", first_day_next_month))
 }
 
 #[cfg(test)]

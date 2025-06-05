@@ -51,9 +51,14 @@ pub async fn get_rate_map_from_db(pool: &SqlitePool) -> Result<HashMap<String, f
     // Get latest rates for each symbol
     for symbol in symbols {
         if let Some((ask, _bid, _timestamp)) = get_latest_forex_rate(pool, &symbol).await? {
-            let (from, to) = symbol.split_once('/').unwrap();
+            let (from, to) = symbol.split_once('/').ok_or_else(|| 
+                anyhow::anyhow!("Invalid symbol format: {}", symbol))?;
             rate_map.insert(format!("{}/{}", from, to), ask);
-            rate_map.insert(format!("{}/{}", to, from), 1.0 / ask);
+            if ask != 0.0 {
+                rate_map.insert(format!("{}/{}", to, from), 1.0 / ask);
+            } else {
+                eprintln!("Warning: Zero exchange rate for {}, skipping reverse rate", symbol);
+            }
         }
     }
 
@@ -119,6 +124,10 @@ pub fn convert_currency(
     // Try reverse rate
     let reverse_rate = format!("{}/{}", adjusted_to_currency, adjusted_from_currency);
     if let Some(&rate) = rate_map.get(&reverse_rate) {
+        if rate == 0.0 {
+            eprintln!("Warning: Zero exchange rate for {}, returning original amount", reverse_rate);
+            return amount;
+        }
         let result = adjusted_amount * (1.0 / rate);
         return match to_currency {
             "GBp" => result * 100.0,
