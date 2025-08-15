@@ -9,7 +9,13 @@
       "Bash(sqlite3:*)",
       "Bash(DATABASE_URL=sqlite:data.db nix develop --command cargo run -- ExportRates)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "/Volumes/data/git/top200-rs-comparison/specs",
+      "/Volumes/data/git/top200-rs-comparison/src",
+      "/Volumes/data/git/top200-rs-comparison"
+    ]
   },
   "enableAllProjectMcpServers": false,
   "enabledMcpjsonServers": [
