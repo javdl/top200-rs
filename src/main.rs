@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 mod api;
+mod compare_marketcaps;
 mod config;
 mod currencies;
 mod db;
@@ -54,6 +55,13 @@ enum Commands {
     AddCurrency { code: String, name: String },
     /// List currencies
     ListCurrencies,
+    /// Compare market caps between two dates
+    CompareMarketCaps {
+        #[arg(long)]
+        from: String,
+        #[arg(long)]
+        to: String,
+    },
 }
 
 #[tokio::main]
@@ -113,6 +121,9 @@ async fn main() -> Result<()> {
             for (code, name) in currencies {
                 println!("{}: {}", code, name);
             }
+        }
+        Some(Commands::CompareMarketCaps { from, to }) => {
+            compare_marketcaps::compare_market_caps(&from, &to).await?;
         }
         None => {
             marketcaps::marketcaps(&pool).await?;

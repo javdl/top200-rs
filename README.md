@@ -16,6 +16,7 @@ A Rust application that tracks and analyzes market capitalization data for top c
 - Retrieves market cap data from financial APIs
 - Stores data in SQLite database
 - Exports data to CSV format
+- Compares market cap data between dates with detailed analytics
 - Handles rate limiting and retries
 
 ## Getting Started
@@ -73,6 +74,25 @@ cargo run -- fetch-specific-date-market-caps 2025-08-01
 # - Fetch market cap data for all configured tickers
 # - Retrieve exchange rates from the database
 # - Export data to output/marketcaps_2025-08-01_YYYYMMDD_HHMMSS.csv
+```
+
+Compare market caps between two dates:
+
+```bash
+# Compare market caps between July 1 and August 1, 2025
+cargo run -- compare-market-caps --from 2025-07-01 --to 2025-08-01
+
+# This will generate:
+# - Detailed comparison CSV with all metrics
+# - Summary report in Markdown format
+# - Analysis includes:
+#   * Percentage and absolute changes
+#   * Ranking changes
+#   * Market share shifts
+#   * Top gainers/losers
+
+# One-liner to fetch and compare year-end 2024 with today
+cargo run -- fetch-specific-date-market-caps 2024-12-31 && cargo run -- fetch-specific-date-market-caps $(date +%Y-%m-%d) && cargo run -- compare-market-caps --from 2024-12-31 --to $(date +%Y-%m-%d)
 ```
 
 Export combined market cap report:

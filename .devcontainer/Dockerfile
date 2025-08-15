@@ -50,6 +50,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --de
     chmod -R a+w /usr/local/rustup /usr/local/cargo
 
 # Install Rust development tools
+<<<<<<< HEAD
 # Install essential tools first (sqlx-cli is critical for the project)
 RUN cargo install sqlx-cli
 
@@ -59,6 +60,9 @@ RUN cargo install cargo-watch || echo "Warning: cargo-watch installation failed 
 RUN cargo install cargo-edit || echo "Warning: cargo-edit installation failed (optional tool)"
 RUN cargo install cargo-tarpaulin || echo "Warning: cargo-tarpaulin installation failed (optional tool)"
 RUN cargo install cargo-deny || echo "Warning: cargo-deny installation failed (optional tool)"
+=======
+RUN cargo install cargo-watch cargo-edit cargo-tarpaulin cargo-deny sqlx-cli
+>>>>>>> e72c29e (WIP)
 
 # Create workspace and config directories and set permissions
 RUN mkdir -p /workspace /home/node/.claude && \
