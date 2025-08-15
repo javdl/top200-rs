@@ -219,7 +219,7 @@ impl FMPClient {
                     ticker: ticker.to_string(),
                     name: profile.company_name.clone(),
                     market_cap_original: market_cap,
-                    original_currency: "USD".to_string(), // FMP returns USD by default
+                    original_currency: profile.currency.clone(), // Use actual currency from profile
                     exchange: profile.exchange.clone(),
                     price,
                 });
@@ -250,7 +250,7 @@ impl FMPClient {
                     ticker: ticker.to_string(),
                     name: profile.company_name.clone(),
                     market_cap_original: market_cap,
-                    original_currency: "USD".to_string(), // FMP returns USD by default
+                    original_currency: profile.currency.clone(), // Use actual currency from profile
                     exchange: profile.exchange.clone(),
                     price,
                 });

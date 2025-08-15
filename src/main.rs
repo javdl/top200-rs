@@ -13,6 +13,7 @@ mod historical_marketcaps;
 mod marketcaps;
 mod models;
 mod monthly_historical_marketcaps;
+mod specific_date_marketcaps;
 mod ticker_details;
 mod utils;
 
@@ -47,6 +48,8 @@ enum Commands {
     FetchHistoricalMarketCaps { start_year: i32, end_year: i32 },
     /// Fetch monthly historical market caps
     FetchMonthlyHistoricalMarketCaps { start_year: i32, end_year: i32 },
+    /// Fetch market caps for a specific date
+    FetchSpecificDateMarketCaps { date: String },
     /// Add a currency
     AddCurrency { code: String, name: String },
     /// List currencies
@@ -90,6 +93,9 @@ async fn main() -> Result<()> {
                 &pool, start_year, end_year,
             )
             .await?;
+        }
+        Some(Commands::FetchSpecificDateMarketCaps { date }) => {
+            specific_date_marketcaps::fetch_specific_date_marketcaps(&pool, &date).await?;
         }
         Some(Commands::AddCurrency { code, name }) => {
             let api_key = env::var("FINANCIALMODELINGPREP_API_KEY")

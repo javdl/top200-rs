@@ -61,6 +61,36 @@ Get a list of available commands:
 cargo run -- --help
 ```
 
+### Example Commands
+
+Fetch market caps for a specific date:
+
+```bash
+# Fetch market caps for August 1, 2025
+cargo run -- fetch-specific-date-market-caps 2025-08-01
+
+# This will:
+# - Fetch market cap data for all configured tickers
+# - Retrieve exchange rates from the database
+# - Export data to output/marketcaps_2025-08-01_YYYYMMDD_HHMMSS.csv
+```
+
+Export combined market cap report:
+
+```bash
+cargo run -- export-combined
+```
+
+Fetch historical data:
+
+```bash
+# Yearly data
+cargo run -- fetch-historical-market-caps 2023 2025
+
+# Monthly data
+cargo run -- fetch-monthly-historical-market-caps 2023 2025
+```
+
 ## Development
 
 ### Resources

@@ -1,0 +1,105 @@
+# SPDX-FileCopyrightText: 2025 Joost van der Laan <joost@fashionunited.com>
+#
+# SPDX-License-Identifier: AGPL-3.0-only
+
+name: Daily Specific Date Market Caps
+
+on:
+  schedule:
+    # Run at 01:00 UTC every day (1 hour after the main daily-run)
+    - cron: '0 1 * * *'
+  # Allow manual trigger
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+env:
+  CARGO_TERM_COLOR: always
+  # Add your environment variables here
+  FINANCIALMODELINGPREP_API_KEY: ${{ secrets.FINANCIALMODELINGPREP_API_KEY }}
+  POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+  BREVO_SENDER_EMAIL: ${{ secrets.BREVO_SENDER_EMAIL }}
+  # Default sender name if BREVO_SENDER_NAME secret is not set
+  BREVO_SENDER_NAME: ${{ secrets.BREVO_SENDER_NAME || 'Top200-RS Notifier' }}
+
+jobs:
+  collect-specific-date-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+        with:
+          determinate: true
+      - uses: DeterminateSystems/flakehub-cache-action@main
+      - uses: DeterminateSystems/flake-checker-action@main
+
+      - name: Calculate today's date
+        id: get-date
+        run: |
+          # Get today's date in YYYY-MM-DD format
+          TODAY=$(date -u +%Y-%m-%d)
+          echo "today=$TODAY" >> $GITHUB_OUTPUT
+          echo "Today's date: $TODAY"
+
+      - name: Build and fetch today's market caps
+        run: |
+          nix \
+            --extra-experimental-features "nix-command flakes" \
+            develop \
+            --command bash -c "cargo build --release && ./target/release/top200-rs fetch-specific-date-market-caps ${{ steps.get-date.outputs.today }}"
+
+      - name: Upload CSV artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-data-specific-date-${{ steps.get-date.outputs.today }}-run-${{ github.run_number }}
+          path: |
+            output/marketcaps_${{ steps.get-date.outputs.today }}_*.csv
+          retention-days: 90
+
+      - name: Send Email Notification via Brevo API
+        if: success() # Only run if previous steps were successful
+        env:
+          RECIPIENT_EMAIL: 'joost@fashionunited.com'
+          EMAIL_SUBJECT: "Daily Specific Date Market Caps - ${{ steps.get-date.outputs.today }} - Run #${{ github.run_number }}"
+          GITHUB_RUN_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: |
+          echo "Preparing email notification..."
+          JSON_PAYLOAD=$(cat <<EOF
+          {
+            "sender": {
+              "name": "${BREVO_SENDER_NAME}",
+              "email": "${BREVO_SENDER_EMAIL}"
+            },
+            "to": [
+              {
+                "email": "${RECIPIENT_EMAIL}"
+              }
+            ],
+            "subject": "${EMAIL_SUBJECT}",
+            "htmlContent": "<html><body><p>The daily specific date market caps job for Top200-RS has finished successfully.</p><p>Market cap data for date: <strong>${{ steps.get-date.outputs.today }}</strong></p><p>View artifacts for run #${{ github.run_number }} here: <a href=\"${GITHUB_RUN_URL}\">${GITHUB_RUN_URL}</a></p><p>Commit: ${{ github.sha }}</p></body></html>"
+          }
+          EOF
+          )
+
+          echo "Sending email..."
+          RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST https://api.brevo.com/v3/smtp/email \
+            -H "accept: application/json" \
+            -H "api-key: ${BREVO_API_KEY}" \
+            -H "content-type: application/json" \
+            -d "${JSON_PAYLOAD}")
+
+          echo "Brevo API response code: ${RESPONSE_CODE}"
+          if [ "${RESPONSE_CODE}" -eq 201 ]; then
+            echo "Email notification sent successfully."
+          else
+            echo "Failed to send email notification. Response code: ${RESPONSE_CODE}"
+            # Optionally, you could output the actual response if you didn't use -o /dev/null for debugging
+            # For now, we just indicate failure based on HTTP code.
+            exit 1 # Mark the step as failed if email sending fails
+          fi

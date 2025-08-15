@@ -107,7 +107,6 @@ sqlite3 data.db < tests/market_caps_totals_per_year.sql
 
 1. **API Clients**: Abstraction layer for external APIs
    - Financial Modeling Prep (FMP) API client in `src/api.rs`
-   - Polygon.io API client in `src/api.rs`
    - Rate limiting with tokio semaphore (300 req/min for FMP)
 
 2. **Data Models**: Defined in `src/models.rs`
@@ -167,6 +166,19 @@ cargo run -- FetchHistoricalMarketCaps 2023 2025
 cargo run -- FetchMonthlyHistoricalMarketCaps 2023 2025
 ```
 
+### Fetching Market Caps for a Specific Date
+
+```bash
+# Fetch market caps for a specific date (format: YYYY-MM-DD)
+cargo run -- fetch-specific-date-market-caps 2025-08-01
+
+# This command will:
+# - Fetch market cap data for all configured tickers for the specified date
+# - Retrieve exchange rates from the database
+# - Export the data to a CSV file in the output/ directory
+# - File format: marketcaps_YYYY-MM-DD_YYYYMMDD_HHMMSS.csv
+```
+
 ### Code Formatting
 
 After making code changes, always run the Rust formatter to ensure code style consistency:
@@ -188,7 +200,6 @@ nix develop --command cargo deny check
 ## API Rate Limits and Error Handling
 
 - **FMP API**: 300 requests per minute (enforced via semaphore)
-- **Polygon API**: Standard rate limits apply
 - Automatic retry logic for transient failures
 - Progress bars for long-running operations
 - Comprehensive error messages with anyhow
@@ -202,6 +213,7 @@ The application supports these main commands:
 - `ExportRates` - Export exchange rates to CSV
 - `FetchHistoricalMarketCaps` - Fetch historical yearly data
 - `FetchMonthlyHistoricalMarketCaps` - Fetch historical monthly data
+- `fetch-specific-date-market-caps` - Fetch market caps for a specific date
 - `ListCurrencies` - List all available currencies
 - `Details` - Fetch company details
 - `ReadConfig` - Display configuration

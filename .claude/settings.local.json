@@ -3,9 +3,21 @@
     "allow": [
       "Bash(ls:*)",
       "Bash(nix develop:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(DATABASE_URL=sqlite:data.db nix develop --command cargo run -- fetch-specific-date-market-caps 2025-06-01)",
+      "Bash(DATABASE_URL=sqlite:data.db nix develop --command cargo run -- fetch-specific-date-market-caps:*)",
+      "Bash(sqlite3:*)",
+      "Bash(DATABASE_URL=sqlite:data.db nix develop --command cargo run -- ExportRates)"
     ],
     "deny": []
   },
-  "enableAllProjectMcpServers": false
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": [
+    "sequential-thinking",
+    "puppeteer",
+    "fetch",
+    "mcp-graphql",
+    "context7",
+    "deepwiki"
+  ]
 }

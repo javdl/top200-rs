@@ -1,4 +1,4 @@
-FROM node:20
+FROM node:24
 
 ARG TZ
 ENV TZ="$TZ"
@@ -19,7 +19,12 @@ RUN apt update && apt install -y less \
   iproute2 \
   dnsutils \
   aggregate \
-  jq
+  jq \
+  curl \
+  build-essential \
+  pkg-config \
+  libssl-dev \
+  sqlite3
 
 # Ensure default node user has access to /usr/local/share
 RUN mkdir -p /usr/local/share/npm-global && \
@@ -35,6 +40,25 @@ RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhisto
 
 # Set `DEVCONTAINER` environment variable to help with orientation
 ENV DEVCONTAINER=true
+
+# Install Rust toolchain as root
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile default && \
+    rustup component add rustfmt clippy rust-analyzer && \
+    chmod -R a+w /usr/local/rustup /usr/local/cargo
+
+# Install Rust development tools
+# Install essential tools first (sqlx-cli is critical for the project)
+RUN cargo install sqlx-cli
+
+# Install optional development tools (failures won't break the build)
+# These tools may have compilation issues on certain architectures
+RUN cargo install cargo-watch || echo "Warning: cargo-watch installation failed (optional tool)"
+RUN cargo install cargo-edit || echo "Warning: cargo-edit installation failed (optional tool)"
+RUN cargo install cargo-tarpaulin || echo "Warning: cargo-tarpaulin installation failed (optional tool)"
+RUN cargo install cargo-deny || echo "Warning: cargo-deny installation failed (optional tool)"
 
 # Create workspace and config directories and set permissions
 RUN mkdir -p /workspace /home/node/.claude && \
@@ -54,7 +78,7 @@ ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
 ENV PATH=$PATH:/usr/local/share/npm-global/bin
 
 # Set the default shell to bash rather than sh
-ENV SHELL /bin/zsh
+ENV SHELL=/bin/zsh
 
 # Default powerline10k theme
 RUN sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.2.0/zsh-in-docker.sh)" -- \
