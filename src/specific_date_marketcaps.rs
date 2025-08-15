@@ -137,7 +137,7 @@ async fn export_specific_date_marketcaps(pool: &SqlitePool, date: NaiveDate) -> 
     // Fetch market caps for the specific date
     let records = sqlx::query!(
         r#"
-        SELECT 
+        SELECT
             m.ticker as "ticker!",
             m.name as "name!",
             CAST(m.market_cap_original AS REAL) as market_cap_original,

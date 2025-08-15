@@ -131,10 +131,12 @@ sqlite3 data.db < tests/market_caps_totals_per_year.sql
 ### Key Modules
 
 - `marketcaps.rs`: Core functionality for market cap data
+- `compare_marketcaps.rs`: Compare market caps between dates with analytics
 - `exchange_rates.rs`: Currency exchange rate handling
 - `details_*.rs`: Company details from different sources
 - `historical_marketcaps.rs`: Historical data retrieval
 - `monthly_historical_marketcaps.rs`: Monthly historical data
+- `specific_date_marketcaps.rs`: Fetch market caps for specific dates
 - `ticker_details.rs`: Company details management
 - `utils.rs`: Common utilities and helpers
 
@@ -179,6 +181,28 @@ cargo run -- fetch-specific-date-market-caps 2025-08-01
 # - File format: marketcaps_YYYY-MM-DD_YYYYMMDD_HHMMSS.csv
 ```
 
+### Comparing Market Caps Between Dates
+
+```bash
+# Compare market caps between two dates (format: YYYY-MM-DD)
+cargo run -- compare-market-caps --from 2025-07-01 --to 2025-08-01
+
+# This command will:
+# - Read the market cap CSV files for both dates
+# - Calculate absolute and percentage changes
+# - Compute ranking changes and market share shifts
+# - Export a detailed comparison CSV
+# - Generate a summary report in Markdown format
+# Output files:
+# - comparison_YYYY-MM-DD_to_YYYY-MM-DD_YYYYMMDD_HHMMSS.csv
+# - comparison_YYYY-MM-DD_to_YYYY-MM-DD_summary_YYYYMMDD_HHMMSS.md
+
+# Year-to-date comparison (fetch end of last year and compare with today)
+cargo run -- fetch-specific-date-market-caps 2024-12-31 && \
+cargo run -- fetch-specific-date-market-caps $(date +%Y-%m-%d) && \
+cargo run -- compare-market-caps --from 2024-12-31 --to $(date +%Y-%m-%d)
+```
+
 ### Code Formatting
 
 After making code changes, always run the Rust formatter to ensure code style consistency:
@@ -214,6 +238,7 @@ The application supports these main commands:
 - `FetchHistoricalMarketCaps` - Fetch historical yearly data
 - `FetchMonthlyHistoricalMarketCaps` - Fetch historical monthly data
 - `fetch-specific-date-market-caps` - Fetch market caps for a specific date
+- `compare-market-caps` - Compare market caps between two dates
 - `ListCurrencies` - List all available currencies
 - `Details` - Fetch company details
 - `ReadConfig` - Display configuration
