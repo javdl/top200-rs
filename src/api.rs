@@ -57,7 +57,8 @@ impl FMPClient {
 
         loop {
             // Wait for rate limit permit
-            let _permit = self.rate_limiter.acquire().await.unwrap();
+            let _permit = self.rate_limiter.acquire().await
+                .map_err(|e| anyhow::anyhow!("Failed to acquire rate limit permit: {}", e))?;
 
             let response = self
                 .client
