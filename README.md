@@ -136,6 +136,155 @@ cargo run -- fetch-historical-market-caps 2023 2025
 cargo run -- fetch-monthly-historical-market-caps 2023 2025
 ```
 
+## Database Browsing
+
+### Accessing the SQLite Database
+
+The application stores all data in a SQLite database (`data.db`). You can browse and query this database using the `sqlite3` command-line tool.
+
+#### Basic Database Commands
+
+```bash
+# Open the database
+sqlite3 data.db
+
+# List all tables
+.tables
+
+# Show table schemas
+.schema market_caps
+.schema ticker_details
+.schema currencies
+.schema forex_rates
+
+# Exit sqlite3
+.quit
+```
+
+#### Viewing Table Structures
+
+```bash
+# View all columns in the market_caps table
+sqlite3 data.db ".schema market_caps"
+
+# View all columns in the ticker_details table
+sqlite3 data.db ".schema ticker_details"
+```
+
+#### Looking Up Company Information
+
+To find information about a specific company (e.g., MYT/MYTE):
+
+```bash
+# Search for a ticker (case-insensitive)
+sqlite3 data.db "SELECT DISTINCT ticker, name FROM market_caps WHERE ticker LIKE '%MYT%';"
+
+# Get recent market cap data for a specific company (e.g., MYTE)
+sqlite3 data.db -header -column "
+  SELECT 
+    ticker, 
+    name, 
+    market_cap_usd, 
+    exchange, 
+    datetime(timestamp, 'unixepoch') as date 
+  FROM market_caps 
+  WHERE ticker = 'MYTE' 
+  ORDER BY timestamp DESC 
+  LIMIT 10;"
+
+# Get company details from ticker_details table
+sqlite3 data.db -header -column "
+  SELECT * FROM ticker_details 
+  WHERE ticker = 'MYTE';"
+
+# Get the latest market cap data with all fields
+sqlite3 data.db -header -column "
+  SELECT 
+    ticker,
+    name,
+    market_cap_original,
+    original_currency,
+    market_cap_eur,
+    market_cap_usd,
+    exchange,
+    price,
+    employees,
+    revenue_usd,
+    pe_ratio,
+    datetime(timestamp, 'unixepoch') as date
+  FROM market_caps 
+  WHERE ticker = 'MYTE' 
+  ORDER BY timestamp DESC 
+  LIMIT 1;"
+```
+
+#### Useful Queries
+
+```bash
+# List all companies with their latest market caps
+sqlite3 data.db -header -column "
+  SELECT 
+    ticker, 
+    name, 
+    market_cap_usd/1000000000 as market_cap_billions_usd,
+    exchange
+  FROM market_caps 
+  WHERE timestamp = (SELECT MAX(timestamp) FROM market_caps)
+  ORDER BY market_cap_usd DESC;"
+
+# Find top 10 companies by market cap
+sqlite3 data.db -header -column "
+  SELECT 
+    ticker, 
+    name, 
+    ROUND(market_cap_usd/1000000000, 2) as market_cap_billions
+  FROM market_caps 
+  WHERE timestamp = (SELECT MAX(timestamp) FROM market_caps)
+  ORDER BY market_cap_usd DESC 
+  LIMIT 10;"
+
+# Track market cap changes over time for a company
+sqlite3 data.db -header -column "
+  SELECT 
+    datetime(timestamp, 'unixepoch') as date,
+    market_cap_usd,
+    price
+  FROM market_caps 
+  WHERE ticker = 'MYTE' 
+  ORDER BY timestamp DESC 
+  LIMIT 30;"
+
+# List all available currencies
+sqlite3 data.db -header -column "SELECT * FROM currencies;"
+
+# View recent exchange rates
+sqlite3 data.db -header -column "
+  SELECT 
+    base_currency,
+    target_currency,
+    rate,
+    datetime(timestamp, 'unixepoch') as date
+  FROM forex_rates 
+  ORDER BY timestamp DESC 
+  LIMIT 20;"
+```
+
+#### Export Query Results to CSV
+
+```bash
+# Export company data to CSV
+sqlite3 -header -csv data.db "
+  SELECT * FROM market_caps 
+  WHERE ticker = 'MYTE' 
+  ORDER BY timestamp DESC;" > myte_data.csv
+
+# Export all latest market caps to CSV
+sqlite3 -header -csv data.db "
+  SELECT * FROM market_caps 
+  WHERE timestamp = (SELECT MAX(timestamp) FROM market_caps)
+  ORDER BY market_cap_usd DESC;" > latest_market_caps.csv
+```
+
 ## Development
 
 ### Resources
