@@ -20,7 +20,7 @@ struct ComparisonRecord {
     #[serde(rename = "Market Cap To (USD)")]
     market_cap_to: Option<String>,
     #[serde(rename = "Absolute Change (USD)")]
-    absolute_change: Option<String>,
+    _absolute_change: Option<String>,
     #[serde(rename = "Percentage Change (%)")]
     percentage_change: Option<String>,
     #[serde(rename = "Rank From")]
@@ -30,9 +30,9 @@ struct ComparisonRecord {
     #[serde(rename = "Rank Change")]
     rank_change: Option<String>,
     #[serde(rename = "Market Share From (%)")]
-    market_share_from: Option<String>,
+    _market_share_from: Option<String>,
     #[serde(rename = "Market Share To (%)")]
-    market_share_to: Option<String>,
+    _market_share_to: Option<String>,
 }
 
 // Professional color palette
