@@ -125,8 +125,7 @@ us_tickers = [
     "BIRD", # Allbirds
     "RENT", # Rent the Runway
     "ROST", # Ross Stores
-    "GPS", # Gap
-    "GAP", # Gap Inc. (alternate ticker)
+    "GAP", # Gap Inc. (changed from GPS on 2024-08-22)
     "BBWI", # L Brands -> Bath & Body Works
     "PVH", # PVH HQ
     "VIPS", # Vipshop Holdings
