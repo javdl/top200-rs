@@ -15,6 +15,7 @@ mod marketcaps;
 mod models;
 mod monthly_historical_marketcaps;
 mod specific_date_marketcaps;
+mod symbol_changes;
 mod ticker_details;
 mod utils;
 mod visualizations;
@@ -69,6 +70,24 @@ enum Commands {
         from: String,
         #[arg(long)]
         to: String,
+    },
+    /// Check for symbol changes that need to be applied
+    CheckSymbolChanges {
+        /// Path to config.toml file
+        #[arg(long, default_value = "config.toml")]
+        config: String,
+    },
+    /// Apply pending symbol changes to configuration
+    ApplySymbolChanges {
+        /// Path to config.toml file
+        #[arg(long, default_value = "config.toml")]
+        config: String,
+        /// Show what would be changed without applying
+        #[arg(long)]
+        dry_run: bool,
+        /// Automatically apply all non-conflicting changes
+        #[arg(long)]
+        auto_apply: bool,
     },
 }
 
@@ -135,6 +154,45 @@ async fn main() -> Result<()> {
         }
         Some(Commands::GenerateCharts { from, to }) => {
             visualizations::generate_all_charts(&from, &to).await?;
+        }
+        Some(Commands::CheckSymbolChanges { config }) => {
+            let api_key = env::var("FINANCIALMODELINGPREP_API_KEY")
+                .or_else(|_| env::var("FMP_API_KEY"))
+                .expect("FINANCIALMODELINGPREP_API_KEY or FMP_API_KEY must be set");
+            let fmp_client = api::FMPClient::new(api_key);
+
+            // Fetch and store latest symbol changes
+            symbol_changes::fetch_and_store_symbol_changes(&pool, &fmp_client).await?;
+
+            // Check which changes apply to our config
+            let report = symbol_changes::check_ticker_updates(&pool, &config).await?;
+            symbol_changes::print_symbol_change_report(&report);
+        }
+        Some(Commands::ApplySymbolChanges {
+            config,
+            dry_run,
+            auto_apply,
+        }) => {
+            // Check which changes apply to our config
+            let report = symbol_changes::check_ticker_updates(&pool, &config).await?;
+            symbol_changes::print_symbol_change_report(&report);
+
+            if report.applicable_changes.is_empty() {
+                println!("\nNo applicable changes to apply.");
+            } else if auto_apply || dry_run {
+                // Apply all applicable changes
+                symbol_changes::apply_ticker_updates(
+                    &pool,
+                    &config,
+                    report.applicable_changes,
+                    dry_run,
+                )
+                .await?;
+            } else {
+                // Interactive mode - ask user to confirm
+                println!("\nFound {} applicable changes. Run with --auto-apply to apply them or --dry-run to preview.", 
+                    report.applicable_changes.len());
+            }
         }
         None => {
             marketcaps::marketcaps(&pool).await?;
