@@ -7,7 +7,12 @@
       "Bash(DATABASE_URL=sqlite:data.db nix develop --command cargo run -- fetch-specific-date-market-caps 2025-06-01)",
       "Bash(DATABASE_URL=sqlite:data.db nix develop --command cargo run -- fetch-specific-date-market-caps:*)",
       "Bash(sqlite3:*)",
-      "Bash(DATABASE_URL=sqlite:data.db nix develop --command cargo run -- ExportRates)"
+      "Bash(DATABASE_URL=sqlite:data.db nix develop --command cargo run -- ExportRates)",
+      "Bash(DATABASE_URL=sqlite:../top200-rs/data.db nix develop --command cargo build --manifest-path=/Volumes/data/git/top200-rs-visualizations/Cargo.toml)",
+      "Bash(grep:*)",
+      "Bash(export DATABASE_URL=sqlite:data.db)",
+      "Bash(pushd:*)",
+      "Bash(popd:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",
