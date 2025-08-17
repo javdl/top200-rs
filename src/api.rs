@@ -16,6 +16,16 @@ use tokio::time::sleep;
 use crate::currencies::convert_currency;
 use crate::models::{Details, FMPCompanyProfile, FMPIncomeStatement, FMPRatios, PolygonResponse};
 
+#[derive(Debug, Deserialize, Clone)]
+pub struct SymbolChange {
+    #[serde(rename = "oldSymbol")]
+    pub old_symbol: String,
+    #[serde(rename = "newSymbol")]
+    pub new_symbol: String,
+    pub date: Option<String>,
+    pub name: Option<String>,
+}
+
 pub struct PolygonClient {
     client: Client,
     api_key: String,
@@ -98,6 +108,20 @@ impl FMPClient {
                 }
             }
         }
+    }
+
+    pub async fn fetch_symbol_changes(&self) -> Result<Vec<SymbolChange>> {
+        let url = format!(
+            "https://financialmodelingprep.com/api/v4/symbol_change?apikey={}",
+            self.api_key
+        );
+
+        let response: Vec<SymbolChange> = self
+            .make_request(url)
+            .await
+            .context("Failed to fetch symbol changes from FMP API")?;
+
+        Ok(response)
     }
 
     pub async fn get_details(

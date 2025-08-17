@@ -120,6 +120,26 @@ cargo run -- compare-market-caps --from 2025-07-01 --to 2025-08-01 && \
 cargo run -- generate-charts --from 2025-07-01 --to 2025-08-01
 ```
 
+Track and apply stock ticker symbol changes:
+
+```bash
+# Check for symbol changes that affect configured tickers
+cargo run -- check-symbol-changes
+
+# Preview changes without applying them
+cargo run -- apply-symbol-changes --dry-run
+
+# Automatically apply all non-conflicting symbol changes
+cargo run -- apply-symbol-changes --auto-apply
+
+# The tool will:
+# - Fetch symbol changes from FMP API (mergers, acquisitions, rebranding)
+# - Identify which changes apply to your configured tickers
+# - Create a backup of config.toml before applying changes
+# - Add comments showing the old ticker and change date
+# - Track applied changes to avoid reprocessing
+```
+
 Export combined market cap report:
 
 ```bash

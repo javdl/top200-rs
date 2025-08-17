@@ -226,6 +226,30 @@ cargo run -- compare-market-caps --from 2025-07-01 --to 2025-08-01 && \
 cargo run -- generate-charts --from 2025-07-01 --to 2025-08-01
 ```
 
+### Tracking Stock Symbol Changes
+
+The application can track and apply stock ticker symbol changes (due to mergers, acquisitions, rebranding, etc.):
+
+```bash
+# Check for symbol changes that affect our tickers
+cargo run -- check-symbol-changes
+
+# Apply symbol changes with dry run (preview changes)
+cargo run -- apply-symbol-changes --dry-run
+
+# Automatically apply all non-conflicting changes
+cargo run -- apply-symbol-changes --auto-apply
+
+# Specify a custom config file
+cargo run -- check-symbol-changes --config custom-config.toml
+```
+
+Symbol changes are fetched from the Financial Modeling Prep API and stored in the database. The tool will:
+- Identify which changes apply to tickers in your configuration
+- Create a backup of config.toml before applying changes
+- Add comments showing the old ticker and change date
+- Mark changes as applied in the database to avoid reprocessing
+
 ### Code Formatting
 
 After making code changes, always run the Rust formatter to ensure code style consistency:
